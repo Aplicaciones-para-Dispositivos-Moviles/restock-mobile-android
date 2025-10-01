@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -20,6 +21,21 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val properties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            properties.load(localPropertiesFile.inputStream())
+        }
+
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME",
+            "\"${properties.getProperty("cloudinary.cloud.name", "")}\"")
+        buildConfigField("String", "CLOUDINARY_API_KEY",
+            "\"${properties.getProperty("cloudinary.api.key", "")}\"")
+        buildConfigField("String", "CLOUDINARY_API_SECRET",
+            "\"${properties.getProperty("cloudinary.api.secret", "")}\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET",
+            "\"${properties.getProperty("cloudinary.upload.preset", "")}\"")
     }
 
     buildTypes {
@@ -42,6 +58,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -82,6 +99,10 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+
+    // OkHttp Logging
+    implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
 
     // Testing
     testImplementation(libs.junit)
