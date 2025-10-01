@@ -6,7 +6,7 @@ import com.uitopic.restockmobile.features.profiles.domain.models.Profile
 import com.uitopic.restockmobile.features.profiles.domain.models.UpdateBusinessDataRequest
 import com.uitopic.restockmobile.features.profiles.domain.models.UpdatePersonalDataRequest
 import com.uitopic.restockmobile.features.profiles.domain.repositories.ProfileRepository
-import jakarta.inject.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.delay
 
 class ProfileRepositoryImpl @Inject constructor(
