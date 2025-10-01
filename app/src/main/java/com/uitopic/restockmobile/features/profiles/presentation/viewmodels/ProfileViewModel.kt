@@ -1,10 +1,12 @@
 package com.uitopic.restockmobile.features.profiles.presentation.viewmodels
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.uitopic.restockmobile.core.cloudinary.repositories.ImageUploadRepository
 import com.uitopic.restockmobile.features.profiles.domain.models.BusinessCategory
 import com.uitopic.restockmobile.features.profiles.domain.models.ChangePasswordRequest
 import com.uitopic.restockmobile.features.profiles.domain.models.Profile
@@ -16,13 +18,15 @@ import com.uitopic.restockmobile.features.profiles.presentation.states.DeleteAcc
 import com.uitopic.restockmobile.features.profiles.presentation.states.EditBusinessDataUiState
 import com.uitopic.restockmobile.features.profiles.presentation.states.EditPersonalDataUiState
 import com.uitopic.restockmobile.features.profiles.presentation.states.ProfileUiState
+import com.uitopic.restockmobile.features.profiles.presentation.states.UploadAvatarUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val repository: ProfileRepository
+    private val repository: ProfileRepository,
+    private val imageUploadRepository: ImageUploadRepository
 ) : ViewModel() {
 
     var profileState by mutableStateOf(ProfileUiState())
@@ -39,6 +43,44 @@ class ProfileViewModel @Inject constructor(
 
     var deleteAccountState by mutableStateOf(DeleteAccountUiState())
         private set
+
+    var uploadAvatarState by mutableStateOf(UploadAvatarUiState())
+        private set
+
+    fun uploadAvatar(imageUri: Uri) {
+        viewModelScope.launch {
+            uploadAvatarState = uploadAvatarState.copy(
+                isUploading = true,
+                error = null
+            )
+
+            imageUploadRepository.uploadImage(imageUri)
+                .onSuccess { imageUrl ->
+                    uploadAvatarState = uploadAvatarState.copy(
+                        isUploading = false,
+                        uploadedUrl = imageUrl,
+                        success = true
+                    )
+                    // Actualizar el perfil con la nueva imagen
+                    profileState.profile?.let { currentProfile ->
+                        val updatedProfile = currentProfile.copy(avatar = imageUrl)
+                        profileState = profileState.copy(
+                            profile = updatedProfile
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    uploadAvatarState = uploadAvatarState.copy(
+                        isUploading = false,
+                        error = error.message ?: "Failed to upload image"
+                    )
+                }
+        }
+    }
+
+    fun resetUploadState() {
+        uploadAvatarState = UploadAvatarUiState()
+    }
 
     // PROFILE OPERATIONS
     fun loadProfile(profileId: String = "1") {
