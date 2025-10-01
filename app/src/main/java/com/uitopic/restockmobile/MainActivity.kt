@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
 
-                        // Aquí agregarías tus otros graphs de navegación
+                        // Aquí agregaFrías tus otros graphs de navegación
                         // authNavGraph(navController)
                         // inventoryNavGraph(navController)
                         // etc...
