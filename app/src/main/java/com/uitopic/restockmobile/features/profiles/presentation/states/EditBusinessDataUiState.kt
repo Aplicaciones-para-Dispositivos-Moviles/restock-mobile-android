@@ -5,6 +5,7 @@ import com.uitopic.restockmobile.features.profiles.domain.models.BusinessCategor
 data class EditBusinessDataUiState(
     val businessName: String = "",
     val businessAddress: String = "",
+    val description: String = "",
     val selectedCategories: List<BusinessCategory> = emptyList(),
     val availableCategories: List<BusinessCategory> = emptyList(),
     val isLoading: Boolean = false,

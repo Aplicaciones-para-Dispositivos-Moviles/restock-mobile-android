@@ -101,6 +101,20 @@ fun EditPersonalDataScreen(
             )
 
             OutlinedTextField(
+                value = state.phone,
+                onValueChange = viewModel::onPhoneChange,
+                label = { Text("Phone") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = state.phoneError != null,
+                supportingText = state.phoneError?.let { { Text(it) } },
+                enabled = !state.isLoading,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
                 value = state.address,
                 onValueChange = viewModel::onAddressChange,
                 label = { Text("Address") },
