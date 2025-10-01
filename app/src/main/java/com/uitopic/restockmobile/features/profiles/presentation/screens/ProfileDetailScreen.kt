@@ -1,23 +1,25 @@
 package com.uitopic.restockmobile.features.profiles.presentation.screens
 
-import androidx.compose.foundation.background
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uitopic.restockmobile.features.profiles.domain.models.Profile
+import com.uitopic.restockmobile.features.profiles.presentation.components.AvatarPicker
 import com.uitopic.restockmobile.features.profiles.presentation.viewmodels.ProfileViewModel
 
 
@@ -28,18 +30,41 @@ fun ProfileDetailScreen(
     onNavigateToEditBusiness: () -> Unit,
     onNavigateToChangePassword: () -> Unit,
     onNavigateToDeleteAccount: () -> Unit,
+    onLogout: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val state = viewModel.profileState
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.loadProfile()
+    }
+
+    LaunchedEffect(viewModel.uploadAvatarState.success) {
+        if (viewModel.uploadAvatarState.success) {
+            snackbarHostState.showSnackbar("Avatar updated successfully")
+            viewModel.resetUploadState()
+        }
+    }
+
+    LaunchedEffect(viewModel.uploadAvatarState.error) {
+        viewModel.uploadAvatarState.error?.let { error ->
+            snackbarHostState.showSnackbar(error)
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Profile Details") },
+                actions = {
+                    IconButton(onClick = {
+                        viewModel.logout()
+                        onLogout()
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -67,6 +92,8 @@ fun ProfileDetailScreen(
                 state.profile != null -> {
                     ProfileContent(
                         profile = state.profile,
+                        isUploadingAvatar = viewModel.uploadAvatarState.isUploading,  // ← AGREGAR
+                        onAvatarSelected = { uri -> viewModel.uploadAvatar(uri) },    // ← AGREGAR
                         onEditPersonal = onNavigateToEditPersonal,
                         onEditBusiness = onNavigateToEditBusiness,
                         onChangePassword = onNavigateToChangePassword,
@@ -79,8 +106,11 @@ fun ProfileDetailScreen(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun ProfileContent(
     profile: Profile,
+    isUploadingAvatar: Boolean,
+    onAvatarSelected: (Uri) -> Unit,
     onEditPersonal: () -> Unit,
     onEditBusiness: () -> Unit,
     onChangePassword: () -> Unit,
@@ -94,20 +124,12 @@ private fun ProfileContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Avatar
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "${profile.firstName.firstOrNull()}${profile.lastName.firstOrNull()}",
-                style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        AvatarPicker(
+            avatarUrl = profile.avatar,
+            initials = "${profile.firstName.firstOrNull() ?: ""}${profile.lastName.firstOrNull() ?: ""}",
+            isUploading = isUploadingAvatar,
+            onImageSelected = onAvatarSelected
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -213,6 +235,7 @@ private fun ProfileContent(
             Spacer(modifier = Modifier.width(8.dp))
             Text("Delete Account")
         }
+
     }
 }
 

@@ -6,7 +6,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.uitopic.restockmobile.features.profiles.presentation.screens.*
 
-// Navigation Routes
 sealed class ProfileRoute(val route: String) {
     data object ProfileDetail : ProfileRoute("profile_detail")
     data object EditPersonalData : ProfileRoute("edit_personal_data")
@@ -15,7 +14,6 @@ sealed class ProfileRoute(val route: String) {
     data object DeleteAccount : ProfileRoute("delete_account")
 }
 
-// Navigation Graph
 fun NavGraphBuilder.profileNavGraph(
     navController: NavController,
     onAccountDeleted: () -> Unit
@@ -37,6 +35,11 @@ fun NavGraphBuilder.profileNavGraph(
                 },
                 onNavigateToDeleteAccount = {
                     navController.navigate(ProfileRoute.DeleteAccount.route)
+                },
+                onLogout = {
+                    navController.navigate("auth_graph") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
@@ -66,27 +69,4 @@ fun NavGraphBuilder.profileNavGraph(
             )
         }
     }
-}
-
-// Extension functions for easy navigation
-fun NavController.navigateToProfile() {
-    navigate("profile_graph") {
-        launchSingleTop = true
-    }
-}
-
-fun NavController.navigateToEditPersonalData() {
-    navigate(ProfileRoute.EditPersonalData.route)
-}
-
-fun NavController.navigateToEditBusinessData() {
-    navigate(ProfileRoute.EditBusinessData.route)
-}
-
-fun NavController.navigateToChangePassword() {
-    navigate(ProfileRoute.ChangePassword.route)
-}
-
-fun NavController.navigateToDeleteAccount() {
-    navigate(ProfileRoute.DeleteAccount.route)
 }

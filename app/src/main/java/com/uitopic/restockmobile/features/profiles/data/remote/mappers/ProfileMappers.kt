@@ -11,20 +11,22 @@ import com.uitopic.restockmobile.features.profiles.domain.models.Profile
 import com.uitopic.restockmobile.features.profiles.domain.models.UpdateBusinessDataRequest
 import com.uitopic.restockmobile.features.profiles.domain.models.UpdatePersonalDataRequest
 
+
+
 fun ProfileDto.toDomain(): Profile {
     return Profile(
-        id = id,
-        firstName = firstName,
-        lastName = lastName,
-        email = email,
-        phone = phone,
-        address = address,
-        country = country,
+        id = userId,
+        firstName = firstName ?: "",
+        lastName = lastName ?: "",
+        email = email ?: "",
+        phone = phone ?: "",
+        address = address ?: "",
+        country = country ?: "",
         avatar = avatar,
-        businessName = businessName,
-        businessAddress = businessAddress,
-        description = description,
-        categories = categories.map { it.toDomain() }
+        businessName = businessName ?: "",
+        businessAddress = businessAddress ?: "",
+        description = description ?: "",
+        categories = businessCategories?.map { it.toDomain() } ?: emptyList()
     )
 }
 
@@ -35,14 +37,15 @@ fun CategoryDto.toDomain(): BusinessCategory {
     )
 }
 
-// Domain to DTO
 fun UpdatePersonalDataRequest.toDto(): UpdatePersonalDataDto {
     return UpdatePersonalDataDto(
         firstName = firstName,
         lastName = lastName,
         email = email,
+        phone = phone,
         address = address,
-        country = country
+        country = country,
+        avatar = avatar
     )
 }
 
@@ -50,7 +53,8 @@ fun UpdateBusinessDataRequest.toDto(): UpdateBusinessDataDto {
     return UpdateBusinessDataDto(
         businessName = businessName,
         businessAddress = businessAddress,
-        categoryIds = categoryIds
+        description = description,
+        businessCategoryIds = categoryIds
     )
 }
 

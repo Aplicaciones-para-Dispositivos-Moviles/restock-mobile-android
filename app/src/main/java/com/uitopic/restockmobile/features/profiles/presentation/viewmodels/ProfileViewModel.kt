@@ -1,10 +1,13 @@
 package com.uitopic.restockmobile.features.profiles.presentation.viewmodels
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.uitopic.restockmobile.core.auth.local.TokenManager
+import com.uitopic.restockmobile.core.cloudinary.repositories.ImageUploadRepository
 import com.uitopic.restockmobile.features.profiles.domain.models.BusinessCategory
 import com.uitopic.restockmobile.features.profiles.domain.models.ChangePasswordRequest
 import com.uitopic.restockmobile.features.profiles.domain.models.Profile
@@ -16,13 +19,16 @@ import com.uitopic.restockmobile.features.profiles.presentation.states.DeleteAcc
 import com.uitopic.restockmobile.features.profiles.presentation.states.EditBusinessDataUiState
 import com.uitopic.restockmobile.features.profiles.presentation.states.EditPersonalDataUiState
 import com.uitopic.restockmobile.features.profiles.presentation.states.ProfileUiState
+import com.uitopic.restockmobile.features.profiles.presentation.states.UploadAvatarUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val repository: ProfileRepository
+    private val repository: ProfileRepository,
+    private val imageUploadRepository: ImageUploadRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     var profileState by mutableStateOf(ProfileUiState())
@@ -40,18 +46,96 @@ class ProfileViewModel @Inject constructor(
     var deleteAccountState by mutableStateOf(DeleteAccountUiState())
         private set
 
+    var uploadAvatarState by mutableStateOf(UploadAvatarUiState())
+        private set
+
+    private fun saveAvatarToBackend(avatarUrl: String) {
+        profileState.profile?.let { profile ->
+            viewModelScope.launch {
+                val request = UpdatePersonalDataRequest(
+                    firstName = profile.firstName,
+                    lastName = profile.lastName,
+                    email = profile.email,
+                    phone = profile.phone,
+                    address = profile.address,
+                    country = profile.country,
+                    avatar = avatarUrl  // ← Nueva URL de Cloudinary
+                )
+
+                val userId = tokenManager.getUserId().toString()
+                repository.updatePersonalData(userId, request)
+                    .onFailure { error ->
+                        // Si falla guardar en backend, mostrar error pero mantener la imagen
+                        uploadAvatarState = uploadAvatarState.copy(
+                            error = "Avatar uploaded but failed to save: ${error.message}"
+                        )
+                    }
+            }
+        }
+    }
+
+    fun uploadAvatar(imageUri: Uri) {
+        viewModelScope.launch {
+            uploadAvatarState = uploadAvatarState.copy(
+                isUploading = true,
+                error = null,
+                success = false
+            )
+
+            imageUploadRepository.uploadImage(imageUri)
+                .onSuccess { imageUrl ->
+                    uploadAvatarState = uploadAvatarState.copy(
+                        isUploading = false,
+                        uploadedUrl = imageUrl,
+                        success = true
+                    )
+
+                    profileState.profile?.let { currentProfile ->
+                        profileState = profileState.copy(
+                            profile = currentProfile.copy(avatar = imageUrl)
+                        )
+                    }
+
+                    saveAvatarToBackend(imageUrl)
+                }
+                .onFailure { error ->
+                    uploadAvatarState = uploadAvatarState.copy(
+                        isUploading = false,
+                        error = error.message ?: "Failed to upload image"
+                    )
+                }
+        }
+    }
+
+    fun onPhoneChange(value: String) {
+        editPersonalDataState = editPersonalDataState.copy(
+            phone = value,
+            phoneError = null
+        )
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            repository.logout()
+        }
+    }
+
+    fun resetUploadState() {
+        uploadAvatarState = UploadAvatarUiState()
+    }
+
     // PROFILE OPERATIONS
-    fun loadProfile(profileId: String = "1") {
+    fun loadProfile() {
         viewModelScope.launch {
             profileState = profileState.copy(isLoading = true, error = null)
 
-            repository.getProfileById(profileId)
+            val userId = tokenManager.getUserId().toString()
+            repository.getProfileById(userId)
                 .onSuccess { profile ->
                     profileState = profileState.copy(
                         profile = profile,
                         isLoading = false
                     )
-                    // Pre-cargar datos en los formularios
                     loadPersonalDataForEdit(profile)
                     loadBusinessDataForEdit(profile)
                 }
@@ -69,8 +153,10 @@ class ProfileViewModel @Inject constructor(
             firstName = profile.firstName,
             lastName = profile.lastName,
             email = profile.email,
+            phone = profile.phone,
             address = profile.address,
-            country = profile.country
+            country = profile.country,
+            avatar = profile.avatar
         )
     }
 
@@ -78,7 +164,14 @@ class ProfileViewModel @Inject constructor(
         editBusinessDataState = editBusinessDataState.copy(
             businessName = profile.businessName,
             businessAddress = profile.businessAddress,
+            description = profile.description ?: "",
             selectedCategories = profile.categories
+        )
+    }
+
+    fun onDescriptionChange(value: String) {
+        editBusinessDataState = editBusinessDataState.copy(
+            description = value
         )
     }
 
@@ -132,11 +225,14 @@ class ProfileViewModel @Inject constructor(
                 firstName = editPersonalDataState.firstName.trim(),
                 lastName = editPersonalDataState.lastName.trim(),
                 email = editPersonalDataState.email.trim(),
+                phone = editPersonalDataState.phone.trim(),
                 address = editPersonalDataState.address.trim(),
-                country = editPersonalDataState.country.trim()
+                country = editPersonalDataState.country.trim(),
+                avatar = profileState.profile?.avatar
             )
 
-            repository.updatePersonalData("1", request)
+            val userId = tokenManager.getUserId().toString()
+            repository.updatePersonalData(userId, request)
                 .onSuccess { updatedProfile ->
                     profileState = profileState.copy(profile = updatedProfile)
                     editPersonalDataState = editPersonalDataState.copy(
@@ -178,6 +274,13 @@ class ProfileViewModel @Inject constructor(
         } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(editPersonalDataState.email).matches()) {
             editPersonalDataState = editPersonalDataState.copy(
                 emailError = "Invalid email format"
+            )
+            isValid = false
+        }
+
+        if (editPersonalDataState.phone.isBlank()) {
+            editPersonalDataState = editPersonalDataState.copy(
+                phoneError = "Phone is required"
             )
             isValid = false
         }
@@ -260,10 +363,12 @@ class ProfileViewModel @Inject constructor(
             val request = UpdateBusinessDataRequest(
                 businessName = editBusinessDataState.businessName.trim(),
                 businessAddress = editBusinessDataState.businessAddress.trim(),
+                description = editBusinessDataState.description.trim(),  // ← AGREGADO
                 categoryIds = editBusinessDataState.selectedCategories.map { it.id }
             )
 
-            repository.updateBusinessData("1", request)
+            val userId = tokenManager.getUserId().toString()
+            repository.updateBusinessData(userId, request)
                 .onSuccess { updatedProfile ->
                     profileState = profileState.copy(profile = updatedProfile)
                     editBusinessDataState = editBusinessDataState.copy(
@@ -279,6 +384,7 @@ class ProfileViewModel @Inject constructor(
                 }
         }
     }
+
 
     private fun validateBusinessData(): Boolean {
         var isValid = true

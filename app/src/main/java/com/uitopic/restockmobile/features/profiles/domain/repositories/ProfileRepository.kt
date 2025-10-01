@@ -27,4 +27,6 @@ interface ProfileRepository {
     suspend fun deleteProfile(id: String): Result<Unit>
 
     suspend fun getAllBusinessCategories(): Result<List<BusinessCategory>>
+
+    suspend fun logout()
 }
