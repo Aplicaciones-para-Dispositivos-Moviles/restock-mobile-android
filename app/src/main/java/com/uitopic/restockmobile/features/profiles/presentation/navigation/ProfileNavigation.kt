@@ -35,6 +35,11 @@ fun NavGraphBuilder.profileNavGraph(
                 },
                 onNavigateToDeleteAccount = {
                     navController.navigate(ProfileRoute.DeleteAccount.route)
+                },
+                onLogout = {
+                    navController.navigate("auth_graph") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
