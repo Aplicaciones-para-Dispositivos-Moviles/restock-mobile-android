@@ -10,12 +10,12 @@ plugins {
 
 android {
     namespace = "com.uitopic.restockmobile"
-    compileSdk = 36
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.uitopic.restockmobile"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 

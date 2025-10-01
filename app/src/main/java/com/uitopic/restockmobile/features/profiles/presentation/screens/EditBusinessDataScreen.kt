@@ -1,6 +1,7 @@
 package com.uitopic.restockmobile.features.profiles.presentation.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -16,7 +17,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.uitopic.restockmobile.features.profiles.domain.models.BusinessCategory
 import com.uitopic.restockmobile.features.profiles.presentation.viewmodels.ProfileViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun EditBusinessDataScreen(
     onNavigateBack: () -> Unit,
