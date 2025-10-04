@@ -20,6 +20,7 @@ import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.auth.presentation.navigation.authNavGraph
 import com.uitopic.restockmobile.features.home.presentation.navigation.HomeRoute
 import com.uitopic.restockmobile.features.home.presentation.navigation.homeNavGraph
+import com.uitopic.restockmobile.features.monitoring.presentation.navigation.monitoringNavGraph
 import com.uitopic.restockmobile.features.profiles.presentation.navigation.profileNavGraph
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -73,6 +74,9 @@ fun RestockApp(tokenManager: TokenManager) {
 
         // Home Screen
         homeNavGraph(navController)
+
+        // Monitoring Graph (Sales)
+        monitoringNavGraph(navController)
 
         // Profile Graph (Profile Details, Edit, etc.)
         profileNavGraph(
