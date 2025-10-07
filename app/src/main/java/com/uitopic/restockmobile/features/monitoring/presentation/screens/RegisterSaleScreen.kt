@@ -23,9 +23,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Restaurant
-import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
@@ -35,7 +33,6 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -68,13 +65,9 @@ import java.util.Locale
 
 private val currencyFormatter = NumberFormat.getCurrencyInstance(Locale.US)
 
-private data class SaleDateOption(
+private data class DishOption(
     val label: String,
-    val date: String // antes LocalDate, ahora String para evitar requerir API 26
-)
-
-private data class SaleTimeOption(
-    val label: String
+    val id: Int
 )
 
 private data class SupplyOption(
@@ -94,18 +87,18 @@ private data class SupplySelection(
 fun RegisterSaleScreen(
     onBack: () -> Unit
 ) {
-    val dateOptions = remember {
+    // Lista de platos peruanos
+    val dishOptions = remember {
         listOf(
-            SaleDateOption("Mar 03, 2023", "2023-03-03"),
-            SaleDateOption("Mar 04, 2023", "2023-03-04"),
-            SaleDateOption("Mar 05, 2023", "2023-03-05")
-        )
-    }
-    val timeOptions = remember {
-        listOf(
-            SaleTimeOption("12:30 pm"),
-            SaleTimeOption("01:15 pm"),
-            SaleTimeOption("07:45 pm")
+            DishOption("Lomo Saltado", 1),
+            DishOption("Aji de Gallina", 2),
+            DishOption("Ceviche", 3),
+            DishOption("Arroz con Pollo", 4),
+            DishOption("Seco de Res", 5),
+            DishOption("Anticuchos", 6),
+            DishOption("Papa a la Huancaina", 7),
+            DishOption("Tacu Tacu", 8),
+            DishOption("Rocoto Relleno", 9)
         )
     }
     val supplyOptions = remember {
@@ -119,8 +112,7 @@ fun RegisterSaleScreen(
     }
 
     var isRegistering by remember { mutableStateOf(false) }
-    var selectedDate by remember { mutableStateOf<SaleDateOption?>(null) }
-    var selectedTime by remember { mutableStateOf<SaleTimeOption?>(null) }
+    var selectedDish by remember { mutableStateOf<DishOption?>(null) }
     var selections by remember { mutableStateOf<Map<Int, SupplySelection>>(emptyMap()) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showCreationHint by remember { mutableStateOf(true) }
@@ -156,15 +148,12 @@ fun RegisterSaleScreen(
             } else {
                 item {
                     SaleFormCard(
-                        dateOptions = dateOptions,
-                        timeOptions = timeOptions,
+                        dishOptions = dishOptions,
                         supplyOptions = supplyOptions,
-                        selectedDate = selectedDate,
-                        selectedTime = selectedTime,
+                        selectedDish = selectedDish,
                         selections = selections,
                         showCreationHint = showCreationHint,
-                        onSelectDate = { selectedDate = it },
-                        onSelectTime = { selectedTime = it },
+                        onSelectDish = { selectedDish = it },
                         onChangeQuantity = { option, quantity ->
                             selections = if (quantity <= 0) {
                                 selections - option.id
@@ -177,16 +166,14 @@ fun RegisterSaleScreen(
 
                 item {
                     SaleActionButtons(
-                        isAddEnabled = selectedDate != null && selectedTime != null && selections.isNotEmpty(),
+                        isAddEnabled = selectedDish != null && selections.isNotEmpty(),
                         onCancel = {
                             isRegistering = false
-                            selectedDate = null
-                            selectedTime = null
+                            selectedDish = null
                             selections = emptyMap()
                         },
                         onReset = {
-                            selectedDate = null
-                            selectedTime = null
+                            selectedDish = null
                             selections = emptyMap()
                         },
                         onAdd = { showSuccessDialog = true }
@@ -198,14 +185,12 @@ fun RegisterSaleScreen(
 
     if (showSuccessDialog) {
         RegisterSaleSuccessDialog(
-            selectedDate = selectedDate,
-            selectedTime = selectedTime,
+            selectedDish = selectedDish,
             selections = selections.values.toList(),
             onDismiss = {
                 showSuccessDialog = false
                 isRegistering = false
-                selectedDate = null
-                selectedTime = null
+                selectedDish = null
                 selections = emptyMap()
             }
         )
@@ -253,7 +238,7 @@ private fun RegisterSaleHeader(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Complete the fields to register a sale. Choose the dates and additional ingredients needed for the service.",
+                text = "Complete the details of a new sale to access the inventory update option",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -367,68 +352,53 @@ private fun EmptySaleState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SaleFormCard(
-    dateOptions: List<SaleDateOption>,
-    timeOptions: List<SaleTimeOption>,
+    dishOptions: List<DishOption>,
     supplyOptions: List<SupplyOption>,
-    selectedDate: SaleDateOption?,
-    selectedTime: SaleTimeOption?,
+    selectedDish: DishOption?,
     selections: Map<Int, SupplySelection>,
     showCreationHint: Boolean,
-    onSelectDate: (SaleDateOption) -> Unit,
-    onSelectTime: (SaleTimeOption) -> Unit,
+    onSelectDish: (DishOption) -> Unit,
     onChangeQuantity: (SupplyOption, Int) -> Unit
 ) {
     CardContainer {
         Column(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            // Nueva sección de plato
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Dates",
+                    text = "Dish",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Choose the date and time for this sale.",
+                    text = "Select one dish and the additional supplies needed.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 DropdownSelector(
-                    label = "Sale date",
-                    value = selectedDate?.label,
-                    placeholder = "Select date",
-                    icon = Icons.Outlined.CalendarMonth,
-                    options = dateOptions.map { it.label },
+                    label = "Dish",
+                    value = selectedDish?.label,
+                    placeholder = "Select a dish from your recipe",
+                    icon = Icons.Outlined.Restaurant,
+                    options = dishOptions.map { it.label },
                     onOptionSelected = { label ->
-                        dateOptions.firstOrNull { it.label == label }?.let(onSelectDate)
+                        dishOptions.firstOrNull { it.label == label }?.let(onSelectDish)
                     }
                 )
 
-                DropdownSelector(
-                    label = "Sale time",
-                    value = selectedTime?.label,
-                    placeholder = "Select time",
-                    icon = Icons.Outlined.Schedule,
-                    options = timeOptions.map { it.label },
-                    onOptionSelected = { label ->
-                        timeOptions.firstOrNull { it.label == label }?.let(onSelectTime)
-                    }
-                )
-
-                if (selectedDate != null || selectedTime != null) {
+                if (selectedDish != null) {
                     SummaryCard(
-                        title = "Selected dates",
-                        rows = listOfNotNull(
-                            selectedDate?.let { "Sale date" to it.label },
-                            selectedTime?.let { "Sale time" to it.label }
-                        )
+                        title = "Selected dish",
+                        rows = listOf("Dish" to selectedDish.label)
                     )
                 }
             }
 
             Divider()
 
+            // Sección existente de insumos
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     text = "Additional supplies",
@@ -466,7 +436,7 @@ private fun SaleFormCard(
 
                 if (showCreationHint) {
                     InfoHint(
-                        text = "Start by selecting a date and the ingredients you need."
+                        text = "Start by selecting a dish and the ingredients you need."
                     )
                 }
             }
@@ -492,26 +462,24 @@ private fun DropdownSelector(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Box {
+        Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = value ?: "",
                 onValueChange = {},
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.Transparent)
-                    .clip(MaterialTheme.shapes.extraSmall)
                     .clickable { expanded = !expanded },
                 readOnly = true,
-                label = { Text(placeholder) },
+                placeholder = { if (value.isNullOrEmpty()) Text(placeholder) },
+                leadingIcon = { Icon(imageVector = icon, contentDescription = null) },
                 trailingIcon = {
                     Icon(
                         imageVector = Icons.Filled.ArrowDropDown,
-                        contentDescription = null
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
-                leadingIcon = {
-                    Icon(imageVector = icon, contentDescription = null)
-                }
+                singleLine = true
             )
             DropdownMenu(
                 expanded = expanded,
@@ -680,7 +648,7 @@ private fun FinancialSummary(
             )
             SummaryRow(label = "Subtotal", value = currencyFormatter.format(subtotal))
             SummaryRow(label = "Taxes (8%)", value = currencyFormatter.format(taxes))
-            HorizontalDivider() // reemplaza Divider deprecado
+            Divider()
             SummaryRow(
                 label = "Total",
                 value = currencyFormatter.format(total),
@@ -770,15 +738,13 @@ private fun SaleActionButtons(
 
 @Composable
 private fun RegisterSaleSuccessDialog(
-    selectedDate: SaleDateOption?,
-    selectedTime: SaleTimeOption?,
+    selectedDish: DishOption?,
     selections: List<SupplySelection>,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         RegisterSaleSuccessContent(
-            selectedDate = selectedDate,
-            selectedTime = selectedTime,
+            selectedDish = selectedDish,
             selections = selections,
             onDismiss = onDismiss
         )
@@ -787,8 +753,7 @@ private fun RegisterSaleSuccessDialog(
 
 @Composable
 private fun RegisterSaleSuccessContent(
-    selectedDate: SaleDateOption?,
-    selectedTime: SaleTimeOption?,
+    selectedDish: DishOption?,
     selections: List<SupplySelection>,
     onDismiss: () -> Unit
 ) {
@@ -839,10 +804,9 @@ private fun RegisterSaleSuccessContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 SummaryCard(
-                    title = "Dates",
+                    title = "Dish",
                     rows = listOfNotNull(
-                        selectedDate?.let { "Sale date" to it.label },
-                        selectedTime?.let { "Sale time" to it.label }
+                        selectedDish?.let { "Dish" to it.label }
                     )
                 )
 
@@ -860,7 +824,7 @@ private fun RegisterSaleSuccessContent(
                             Text(
                                 text = "No additional supplies were added.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         } else {
                             selections.forEach { selection ->
@@ -926,27 +890,22 @@ private fun RegisterSaleEmptyPreview() {
 @Composable
 private fun RegisterSaleFormPreview() {
     RestockmobileTheme {
-        val dateOption = SaleDateOption("Mar 03, 2023", "2023-03-03")
-        val timeOption = SaleTimeOption("12:30 pm")
+        val dish = DishOption("Lomo Saltado", 1)
         val supplies = listOf(
             SupplyOption(1, "Lemon", "Fresh whole lemons", 2.50),
             SupplyOption(2, "Feta cheese", "Crumbled, 1 lb bag", 4.75),
             SupplyOption(3, "Olive oil", "Extra virgin 500 ml", 7.80)
         )
-
         Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
             SaleFormCard(
-                dateOptions = listOf(dateOption),
-                timeOptions = listOf(timeOption),
+                dishOptions = listOf(dish),
                 supplyOptions = supplies,
-                selectedDate = dateOption,
-                selectedTime = timeOption,
+                selectedDish = dish,
                 selections = supplies.take(2).associate { option ->
                     option.id to SupplySelection(option, if (option.id == 1) 2 else 1)
                 },
                 showCreationHint = false,
-                onSelectDate = {},
-                onSelectTime = {},
+                onSelectDish = {},
                 onChangeQuantity = { _, _ -> }
             )
         }
@@ -958,8 +917,7 @@ private fun RegisterSaleFormPreview() {
 private fun RegisterSaleSuccessPreview() {
     RestockmobileTheme {
         RegisterSaleSuccessContent(
-            selectedDate = SaleDateOption("Mar 03, 2023", "2023-03-03"),
-            selectedTime = SaleTimeOption("12:30 pm"),
+            selectedDish = DishOption("Ceviche", 3),
             selections = listOf(
                 SupplySelection(SupplyOption(1, "Lemon", "Fresh whole lemons", 2.50), 2),
                 SupplySelection(SupplyOption(2, "Feta cheese", "Crumbled, 1 lb bag", 4.75), 1)

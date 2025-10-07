@@ -20,6 +20,7 @@ import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.auth.presentation.navigation.authNavGraph
 import com.uitopic.restockmobile.features.home.presentation.navigation.HomeRoute
 import com.uitopic.restockmobile.features.home.presentation.navigation.homeNavGraph
+import com.uitopic.restockmobile.features.monitoring.presentation.navigation.MonitoringRoute
 import com.uitopic.restockmobile.features.monitoring.presentation.navigation.monitoringNavGraph
 import com.uitopic.restockmobile.features.profiles.presentation.navigation.profileNavGraph
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
@@ -51,11 +52,13 @@ class MainActivity : ComponentActivity() {
 fun RestockApp(tokenManager: TokenManager) {
     val navController = rememberNavController()
 
-    // Determinar ruta inicial
-    val startDestination = if (tokenManager.isLoggedIn()) {
-        HomeRoute.Home.route
-    } else {
-        "auth_graph"
+    // Bandera temporal para bypass de login y home
+    val FORCE_MONITORING_START = true
+
+    val startDestination = when {
+        FORCE_MONITORING_START -> MonitoringRoute.Sales.route
+        tokenManager.isLoggedIn() -> HomeRoute.Home.route
+        else -> "auth_graph"
     }
 
     NavHost(
@@ -90,4 +93,3 @@ fun RestockApp(tokenManager: TokenManager) {
         )
     }
 }
-
