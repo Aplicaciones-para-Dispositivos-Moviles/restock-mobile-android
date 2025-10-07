@@ -1,6 +1,7 @@
 package com.uitopic.restockmobile.features.monitoring.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,10 +12,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
@@ -25,11 +29,13 @@ import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,13 +64,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 import java.text.NumberFormat
-import java.time.LocalDate
 import java.util.Locale
+
 private val currencyFormatter = NumberFormat.getCurrencyInstance(Locale.US)
 
 private data class SaleDateOption(
     val label: String,
-    val date: LocalDate
+    val date: String // antes LocalDate, ahora String para evitar requerir API 26
 )
 
 private data class SaleTimeOption(
@@ -90,9 +96,9 @@ fun RegisterSaleScreen(
 ) {
     val dateOptions = remember {
         listOf(
-            SaleDateOption("Mar 03, 2023", LocalDate.of(2023, 3, 3)),
-            SaleDateOption("Mar 04, 2023", LocalDate.of(2023, 3, 4)),
-            SaleDateOption("Mar 05, 2023", LocalDate.of(2023, 3, 5))
+            SaleDateOption("Mar 03, 2023", "2023-03-03"),
+            SaleDateOption("Mar 04, 2023", "2023-03-04"),
+            SaleDateOption("Mar 05, 2023", "2023-03-05")
         )
     }
     val timeOptions = remember {
@@ -486,32 +492,33 @@ private fun DropdownSelector(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
+        Box {
             OutlinedTextField(
                 value = value ?: "",
                 onValueChange = {},
                 modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .background(Color.Transparent)
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .clickable { expanded = !expanded },
                 readOnly = true,
                 label = { Text(placeholder) },
                 trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    Icon(
+                        imageVector = Icons.Filled.ArrowDropDown,
+                        contentDescription = null
+                    )
                 },
                 leadingIcon = {
                     Icon(imageVector = icon, contentDescription = null)
-                },
-                colors = ExposedDropdownMenuDefaults.textFieldColors()
+                }
             )
-            ExposedDropdownMenu(
+            DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
                 options.forEach { option ->
-                    androidx.compose.material3.DropdownMenuItem(
+                    DropdownMenuItem(
                         text = { Text(option) },
                         onClick = {
                             expanded = false
@@ -673,7 +680,7 @@ private fun FinancialSummary(
             )
             SummaryRow(label = "Subtotal", value = currencyFormatter.format(subtotal))
             SummaryRow(label = "Taxes (8%)", value = currencyFormatter.format(taxes))
-            Divider()
+            HorizontalDivider() // reemplaza Divider deprecado
             SummaryRow(
                 label = "Total",
                 value = currencyFormatter.format(total),
@@ -919,7 +926,7 @@ private fun RegisterSaleEmptyPreview() {
 @Composable
 private fun RegisterSaleFormPreview() {
     RestockmobileTheme {
-        val dateOption = SaleDateOption("Mar 03, 2023", LocalDate.of(2023, 3, 3))
+        val dateOption = SaleDateOption("Mar 03, 2023", "2023-03-03")
         val timeOption = SaleTimeOption("12:30 pm")
         val supplies = listOf(
             SupplyOption(1, "Lemon", "Fresh whole lemons", 2.50),
@@ -951,7 +958,7 @@ private fun RegisterSaleFormPreview() {
 private fun RegisterSaleSuccessPreview() {
     RestockmobileTheme {
         RegisterSaleSuccessContent(
-            selectedDate = SaleDateOption("Mar 03, 2023", LocalDate.of(2023, 3, 3)),
+            selectedDate = SaleDateOption("Mar 03, 2023", "2023-03-03"),
             selectedTime = SaleTimeOption("12:30 pm"),
             selections = listOf(
                 SupplySelection(SupplyOption(1, "Lemon", "Fresh whole lemons", 2.50), 2),
