@@ -8,7 +8,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.domain.models.Supply
@@ -30,6 +33,7 @@ fun SupplyFormScreen(
     var price by remember { mutableStateOf("") }
 
     val isEditing = existingSupply != null
+    val greenColor = Color(0xFF4F8A5B)
 
     LaunchedEffect(existingSupply) {
         if (existingSupply != null) {
@@ -41,58 +45,93 @@ fun SupplyFormScreen(
     }
 
     Scaffold(
+        containerColor = Color.White,
         topBar = {
-            TopAppBar(
-                title = { Text(if (isEditing) "Editar Insumo" else "Agregar Insumo") },
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        if (isEditing) "Edit Supply" else "Add Supply",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = greenColor
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.White,
+                    titleContentColor = Color.Black
+                )
             )
         }
     ) { padding ->
         Column(
-            Modifier
+            modifier = Modifier
                 .padding(padding)
-                .padding(16.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
                 .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
+            // --- Supply selection ---
             if (!isEditing) {
-                Text("Seleccionar insumo base")
+                Text(
+                    text = "Select Base Supply",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp
+                )
+
                 DropdownMenuField(
                     options = supplies.map { it.name },
                     selected = selectedSupply?.name,
-                    onSelect = { name -> selectedSupply = supplies.find { it.name == name } }
+                    onSelect = { name ->
+                        selectedSupply = supplies.find { it.name == name }
+                    }
                 )
             } else {
-                Text("Insumo base: ${existingSupply!!.supply.name}")
+                Text(
+                    text = "Base Supply: ${existingSupply!!.supply.name}",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp
+                )
             }
 
+            // --- Form fields ---
             OutlinedTextField(
                 value = minStock,
                 onValueChange = { minStock = it },
-                label = { Text("Stock mínimo") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text("Minimum Stock") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium
             )
 
             OutlinedTextField(
                 value = maxStock,
                 onValueChange = { maxStock = it },
-                label = { Text("Stock máximo") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text("Maximum Stock") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium
             )
 
             OutlinedTextField(
                 value = price,
                 onValueChange = { price = it },
-                label = { Text("Precio") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text("Price") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
 
+            // --- Action button ---
             Button(
                 onClick = {
                     if (selectedSupply != null && minStock.isNotBlank() && maxStock.isNotBlank() && price.isNotBlank()) {
@@ -103,7 +142,7 @@ fun SupplyFormScreen(
                             maxStock = maxStock.toInt(),
                             price = price.toDouble(),
                             supply = selectedSupply!!,
-                            unit = existingSupply?.unit ?: UnitModel("Unidad", "u")
+                            unit = existingSupply?.unit ?: UnitModel("Unit", "u")
                         )
 
                         if (isEditing) viewModel.updateCustomSupply(newCustom)
@@ -112,9 +151,16 @@ fun SupplyFormScreen(
                         onBack()
                     }
                 },
-                modifier = Modifier.align(Alignment.End)
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .fillMaxWidth(0.4f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = greenColor,
+                    contentColor = Color.White
+                ),
+                shape = MaterialTheme.shapes.large
             ) {
-                Text(if (isEditing) "Actualizar" else "Guardar")
+                Text(if (isEditing) "Update" else "Save", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -132,14 +178,15 @@ fun DropdownMenuField(
         OutlinedTextField(
             value = selected ?: "",
             onValueChange = {},
-            label = { Text("Seleccionar") },
+            label = { Text("Select") },
             modifier = Modifier.fillMaxWidth(),
             readOnly = true,
             trailingIcon = {
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                 }
-            }
+            },
+            shape = MaterialTheme.shapes.medium
         )
         DropdownMenu(
             expanded = expanded,

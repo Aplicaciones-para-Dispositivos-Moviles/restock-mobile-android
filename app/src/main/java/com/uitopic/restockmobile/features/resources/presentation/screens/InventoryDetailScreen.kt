@@ -3,10 +3,13 @@ package com.uitopic.restockmobile.features.resources.presentation.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -18,21 +21,29 @@ import com.uitopic.restockmobile.features.resources.presentation.viewmodels.Inve
 fun InventoryDetailScreen(
     batchId: String,
     viewModel: InventoryViewModel = hiltViewModel(),
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onEdit: (String) -> Unit = {}
 ) {
     val batches by viewModel.batches.collectAsState()
-
     val batch = batches.find { it.id == batchId }
 
+    val greenColor = Color(0xFF4F8A5B)
+    val whiteColor = Color.White
+
     Scaffold(
+        containerColor = whiteColor,
         topBar = {
             TopAppBar(
-                title = { Text("Detalle del Lote") },
+                title = { Text("Batch Details", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = greenColor)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = whiteColor,
+                    titleContentColor = Color.Black
+                )
             )
         }
     ) { padding ->
@@ -43,58 +54,115 @@ fun InventoryDetailScreen(
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Lote no encontrado", style = MaterialTheme.typography.bodyLarge)
+                Text("Batch not found", color = Color.Gray)
             }
         } else {
-            BatchDetailContent(batch = batch, modifier = Modifier.padding(padding))
+            BatchDetailContent(
+                batch = batch,
+                onEdit = { onEdit(batch.id) },
+                onDelete = {
+                    viewModel.deleteBatch(batch.id)
+                    onBack()
+                },
+                modifier = Modifier.padding(padding)
+            )
         }
     }
 }
 
 @Composable
-fun BatchDetailContent(batch: Batch, modifier: Modifier = Modifier) {
+fun BatchDetailContent(batch: Batch, onEdit: () -> Unit, onDelete: () -> Unit, modifier: Modifier = Modifier) {
     val customSupply = batch.customSupply
     val supply = customSupply?.supply
     val unit = customSupply?.unit
+    val greenColor = Color(0xFF4F8A5B)
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Información del Lote", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Divider()
+        // === Supply Info Card ===
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)),
+            elevation = CardDefaults.cardElevation(4.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Supply Information", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Divider()
 
-        DetailRow("Nombre del insumo:", supply?.name ?: "Sin nombre")
-        DetailRow("Descripción:", supply?.description ?: "-")
-        DetailRow("Categoría:", supply?.category ?: "-")
-        DetailRow("Perecible:", if (supply?.perishable == true) "Sí" else "No")
+                DetailRow("Name:", supply?.name ?: "-")
+                DetailRow("Description:", supply?.description ?: "-")
+                DetailRow("Category:", supply?.category ?: "-")
+                DetailRow("Perishable:", if (supply?.perishable == true) "Yes" else "No")
+            }
+        }
 
-        Spacer(Modifier.height(8.dp))
-        Text("Datos personalizados del insumo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Divider()
+        // === Custom Supply Info ===
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)),
+            elevation = CardDefaults.cardElevation(4.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Custom Supply Details", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Divider()
 
-        DetailRow("Stock mínimo:", customSupply?.minStock?.toString() ?: "-")
-        DetailRow("Stock máximo:", customSupply?.maxStock?.toString() ?: "-")
-        DetailRow("Precio:", customSupply?.price?.toString() ?: "-")
-        DetailRow("Unidad:", "${unit?.name ?: "-"} (${unit?.abbreviation ?: ""})")
+                DetailRow("Min stock:", customSupply?.minStock?.toString() ?: "-")
+                DetailRow("Max stock:", customSupply?.maxStock?.toString() ?: "-")
+                DetailRow("Price:", customSupply?.price?.toString() ?: "-")
+                DetailRow("Unit:", "${unit?.name ?: "-"} (${unit?.abbreviation ?: ""})")
+            }
+        }
 
-        Spacer(Modifier.height(8.dp))
-        Text("Datos del lote", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Divider()
+        // === Batch Info ===
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)),
+            elevation = CardDefaults.cardElevation(4.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Batch Data", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Divider()
 
-        DetailRow("Stock actual:", batch.stock.toString())
-        DetailRow("Fecha de vencimiento:", batch.expirationDate ?: "-")
-        DetailRow("ID del usuario:", batch.userId ?: "-")
-        DetailRow("ID del lote:", batch.id)
+                DetailRow("Current stock:", batch.stock.toString())
+                DetailRow("Expiration date:", batch.expirationDate ?: "-")
+                DetailRow("User ID:", batch.userId ?: "-")
+                DetailRow("Batch ID:", batch.id)
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // === Actions ===
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            OutlinedButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                Spacer(Modifier.width(6.dp))
+                Text("Delete")
+            }
+            Spacer(Modifier.width(10.dp))
+            Button(
+                onClick = onEdit,
+                colors = ButtonDefaults.buttonColors(containerColor = greenColor, contentColor = Color.White)
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                Spacer(Modifier.width(6.dp))
+                Text("Edit")
+            }
+        }
     }
 }
 
 @Composable
 fun DetailRow(label: String, value: String) {
     Row(
-        Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(label, fontWeight = FontWeight.SemiBold)

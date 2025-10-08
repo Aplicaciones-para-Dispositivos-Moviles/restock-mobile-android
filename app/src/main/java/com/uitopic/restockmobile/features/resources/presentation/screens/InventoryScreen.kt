@@ -3,9 +3,7 @@ package com.uitopic.restockmobile.features.resources.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -32,6 +30,7 @@ fun InventoryScreen(
     viewModel: InventoryViewModel = hiltViewModel(),
     onAddSupplyClick: () -> Unit,
     onEditSupplyClick: (CustomSupply) -> Unit,
+    onViewSupplyDetails: (CustomSupply) -> Unit,
     onBatchClick: (String) -> Unit,
     onEditBatchClick: (String) -> Unit,
     onAddBatchClick: () -> Unit
@@ -59,7 +58,6 @@ fun InventoryScreen(
         )
     }
 
-    // 🎨 Colores personalizados
     val greenColor = Color(0xFF4F8A5B)
     val whiteColor = Color.White
 
@@ -69,7 +67,7 @@ fun InventoryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Gestión de Inventario",
+                        "Inventory Management",
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -84,8 +82,8 @@ fun InventoryScreen(
                 onClick = onAddBatchClick,
                 containerColor = greenColor,
                 contentColor = whiteColor,
-                icon = { Icon(Icons.Default.Add, contentDescription = "Agregar lote") },
-                text = { Text("Nuevo lote") }
+                icon = { Icon(Icons.Default.Add, contentDescription = "Add batch") },
+                text = { Text("New batch") }
             )
         }
     ) { padding ->
@@ -97,7 +95,6 @@ fun InventoryScreen(
                 .background(whiteColor),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // 🔹 Sección de insumos
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -105,7 +102,7 @@ fun InventoryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Catálogo de insumos",
+                        "Supply Catalog",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -116,40 +113,59 @@ fun InventoryScreen(
                             contentColor = whiteColor
                         )
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Agregar")
+                        Icon(Icons.Default.Add, contentDescription = "Add")
                         Spacer(Modifier.width(4.dp))
-                        Text("Insumo")
+                        Text("Supply")
                     }
                 }
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp),
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     items(filteredSupplies) { custom ->
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .width(200.dp)
+                                .height(150.dp),
                             elevation = CardDefaults.cardElevation(4.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8))
                         ) {
                             Column(
                                 modifier = Modifier.padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                verticalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(custom.supply.name, fontWeight = FontWeight.SemiBold)
-                                Text("Precio: S/. ${custom.price}")
-                                Text("Stock min: ${custom.minStock}")
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(custom.supply.name, fontWeight = FontWeight.SemiBold)
+                                    Text("S/. ${custom.price}")
+                                    Text("Min: ${custom.minStock} / Max: ${custom.maxStock}")
+                                }
                                 Spacer(Modifier.height(4.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    IconButton(onClick = { onViewSupplyDetails(custom) }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = "View details",
+                                            tint = greenColor
+                                        )
+                                    }
                                     IconButton(onClick = { onEditSupplyClick(custom) }) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = greenColor)
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit",
+                                            tint = greenColor
+                                        )
                                     }
                                     IconButton(onClick = { viewModel.deleteCustomSupply(custom) }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.Gray)
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Delete",
+                                            tint = Color.Gray
+                                        )
                                     }
                                 }
                             }
@@ -160,10 +176,9 @@ fun InventoryScreen(
 
             Divider(thickness = 1.dp, color = Color.LightGray)
 
-            // 🔹 Sección de lotes
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Inventario (Lotes)",
+                    "Inventory (Batches)",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -171,8 +186,8 @@ fun InventoryScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
-                    placeholder = { Text("Buscar insumo o lote...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                    placeholder = { Text("Search supply or batch...") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -194,18 +209,18 @@ fun InventoryScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column {
-                                    Text(batch.customSupply?.supply?.name ?: "Sin nombre", fontWeight = FontWeight.SemiBold)
+                                    Text(batch.customSupply?.supply?.name ?: "No name", fontWeight = FontWeight.SemiBold)
                                     Text("Stock: ${batch.stock}")
                                 }
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     IconButton(onClick = { onBatchClick(batch.id) }) {
-                                        Icon(Icons.Default.Search, contentDescription = "Detalles", tint = greenColor)
+                                        Icon(Icons.Default.Search, contentDescription = "Details", tint = greenColor)
                                     }
                                     IconButton(onClick = { onEditBatchClick(batch.id) }) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = greenColor)
+                                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = greenColor)
                                     }
                                     IconButton(onClick = { viewModel.deleteBatch(batch.id) }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.Gray)
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Gray)
                                     }
                                 }
                             }

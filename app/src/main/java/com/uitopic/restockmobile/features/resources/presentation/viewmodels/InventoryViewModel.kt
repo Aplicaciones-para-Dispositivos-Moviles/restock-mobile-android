@@ -43,7 +43,6 @@ class InventoryViewModel @Inject constructor(
         }
     }
 
-    // 🔹 Crear un nuevo batch
     fun createBatch(batch: Batch) {
         viewModelScope.launch {
             try {
@@ -56,7 +55,6 @@ class InventoryViewModel @Inject constructor(
         }
     }
 
-    // 🔹 Actualizar un batch existente
     fun updateBatch(updated: Batch) {
         viewModelScope.launch {
             try {
@@ -71,7 +69,6 @@ class InventoryViewModel @Inject constructor(
         }
     }
 
-    // 🔹 Eliminar un batch
     fun deleteBatch(id: String) {
         viewModelScope.launch {
             try {
@@ -84,13 +81,11 @@ class InventoryViewModel @Inject constructor(
         }
     }
 
-    // 🔹 Obtener batch por ID (para modo edición)
     fun getBatchById(id: String?): Batch? {
         if (id == null) return null
         return _batches.value.find { it.id == id }
     }
 
-    // 🔹 Custom supplies (como ya tenías)
     fun addCustomSupply(custom: CustomSupply) {
         viewModelScope.launch {
             try {
