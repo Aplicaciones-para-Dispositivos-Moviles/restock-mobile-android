@@ -7,11 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -52,13 +49,39 @@ class MainActivity : ComponentActivity() {
 fun RestockApp(tokenManager: TokenManager) {
     val navController = rememberNavController()
 
-    // Bandera temporal para bypass de login y home
-    val FORCE_MONITORING_START = true
+    // ==========================================
+    // CONFIGURACIÓN DE INICIO DE LA APP
+    // ==========================================
+    // Lógica de autenticación activada
+    // Si el usuario tiene token válido, va a Home
+    // Si no tiene token, va al Login
+    // ==========================================
 
+    // App original sin bypass
+    //val startDestination = if (tokenManager.isLoggedIn()) {
+    //    HomeRoute.Home.route
+    //} else {
+    //    "auth_graph"
+    //}
+
+    // ==========================================
+    // BYPASS DESACTIVADOS (para desarrollo)
+    // ==========================================
+
+    // Bypass directo a Home (sin login) - DESACTIVADO
+    // val FORCE_HOME_START = true
+    // val startDestination = when {
+    //     FORCE_HOME_START -> HomeRoute.Home.route
+    //     tokenManager.isLoggedIn() -> HomeRoute.Home.route
+    //     else -> "auth_graph"
+    // }
+
+    // Bypass directo a Monitoring/Sales - DESACTIVADO
+    val FORCE_MONITORING_START = true
     val startDestination = when {
-        FORCE_MONITORING_START -> MonitoringRoute.Sales.route
-        tokenManager.isLoggedIn() -> HomeRoute.Home.route
-        else -> "auth_graph"
+         FORCE_MONITORING_START -> MonitoringRoute.Sales.route
+         tokenManager.isLoggedIn() -> HomeRoute.Home.route
+         else -> "auth_graph"
     }
 
     NavHost(
