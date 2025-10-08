@@ -6,7 +6,7 @@ import androidx.navigation.compose.composable
 import com.uitopic.restockmobile.features.home.presentation.screens.HomeScreen
 
 sealed class HomeRoute(val route: String) {
-    data object Home : HomeRoute("home")
+    object Home : HomeRoute("home")
 }
 
 fun NavGraphBuilder.homeNavGraph(
@@ -16,6 +16,9 @@ fun NavGraphBuilder.homeNavGraph(
         HomeScreen(
             onNavigateToProfile = {
                 navController.navigate("profile_graph")
+            },
+            onNavigateToInventory = {
+                navController.navigate("inventory")
             }
         )
     }

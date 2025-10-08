@@ -3,6 +3,7 @@ package com.uitopic.restockmobile.features.home.presentation.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,7 +14,8 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToInventory: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -76,6 +78,17 @@ fun HomeScreen(
                         Icon(Icons.Default.AccountCircle, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("View Profile")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    ElevatedButton(
+                        onClick = onNavigateToInventory,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Inventory, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("View Inv")
                     }
                 }
             }
