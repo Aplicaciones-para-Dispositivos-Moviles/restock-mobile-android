@@ -17,28 +17,30 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -61,13 +63,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 private val currencyFormatter = NumberFormat.getCurrencyInstance(Locale.US)
+private val dateFormatter = SimpleDateFormat("MMM dd, yyyy", Locale.US)
+private val timeFormatter = SimpleDateFormat("hh:mm a", Locale.US)
 
 private data class DishOption(
     val label: String,
-    val id: Int
+    val id: Int,
+    val price: Double
 )
 
 private data class SupplyOption(
@@ -82,23 +89,37 @@ private data class SupplySelection(
     val quantity: Int
 )
 
+private data class DishSelection(
+    val option: DishOption,
+    val quantity: Int
+)
+
+private data class RegisteredSale(
+    val id: Int,
+    val saleNumber: String,
+    val dishSelections: List<DishSelection>,
+    val supplySelections: List<SupplySelection>,
+    val totalCost: Double,
+    val registeredDate: Date
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterSaleScreen(
     onBack: () -> Unit
 ) {
-    // Lista de platos peruanos
+    // Lista de platos peruanos con precios
     val dishOptions = remember {
         listOf(
-            DishOption("Lomo Saltado", 1),
-            DishOption("Aji de Gallina", 2),
-            DishOption("Ceviche", 3),
-            DishOption("Arroz con Pollo", 4),
-            DishOption("Seco de Res", 5),
-            DishOption("Anticuchos", 6),
-            DishOption("Papa a la Huancaina", 7),
-            DishOption("Tacu Tacu", 8),
-            DishOption("Rocoto Relleno", 9)
+            DishOption("Lomo Saltado", 1, 25.90),
+            DishOption("Aji de Gallina", 2, 22.50),
+            DishOption("Ceviche", 3, 28.90),
+            DishOption("Arroz con Pollo", 4, 18.90),
+            DishOption("Seco de Res", 5, 24.90),
+            DishOption("Anticuchos", 6, 16.50),
+            DishOption("Papa a la Huancaina", 7, 12.90),
+            DishOption("Tacu Tacu", 8, 19.90),
+            DishOption("Rocoto Relleno", 9, 21.50)
         )
     }
     val supplyOptions = remember {
@@ -112,10 +133,12 @@ fun RegisterSaleScreen(
     }
 
     var isRegistering by remember { mutableStateOf(false) }
-    var selectedDish by remember { mutableStateOf<DishOption?>(null) }
+    var dishSelections by remember { mutableStateOf<Map<Int, DishSelection>>(emptyMap()) }
     var selections by remember { mutableStateOf<Map<Int, SupplySelection>>(emptyMap()) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showCreationHint by remember { mutableStateOf(true) }
+    var registeredSales by remember { mutableStateOf<List<RegisteredSale>>(emptyList()) }
+    var nextSaleId by remember { mutableStateOf(1) }
 
     LaunchedEffect(isRegistering) {
         if (isRegistering) {
@@ -139,22 +162,55 @@ fun RegisterSaleScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (!isRegistering) {
-                item {
-                    EmptySaleState(
-                        onCreateSale = { isRegistering = true },
-                        onClose = onBack
-                    )
+                if (registeredSales.isEmpty()) {
+                    item {
+                        EmptySaleState(
+                            onCreateSale = { isRegistering = true },
+                            onClose = onBack
+                        )
+                    }
+                } else {
+                    // Mostrar lista de ventas registradas
+                    items(registeredSales) { sale ->
+                        RegisteredSaleCard(
+                            sale = sale,
+                            onDelete = {
+                                registeredSales = registeredSales.filter { it.id != sale.id }
+                            }
+                        )
+                    }
+
+                    // Botón para crear nueva venta
+                    item {
+                        Button(
+                            onClick = { isRegistering = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Outlined.Add, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Create new sale")
+                        }
+                    }
                 }
             } else {
                 item {
                     SaleFormCard(
                         dishOptions = dishOptions,
                         supplyOptions = supplyOptions,
-                        selectedDish = selectedDish,
+                        dishSelections = dishSelections,
                         selections = selections,
                         showCreationHint = showCreationHint,
-                        onSelectDish = { selectedDish = it },
-                        onChangeQuantity = { option, quantity ->
+                        onSelectDish = { dishOption, quantity ->
+                            dishSelections = dishSelections + (dishOption.id to DishSelection(dishOption, quantity))
+                        },
+                        onChangeDishQuantity = { dishOption, quantity ->
+                            dishSelections = if (quantity <= 0) {
+                                dishSelections - dishOption.id
+                            } else {
+                                dishSelections + (dishOption.id to DishSelection(dishOption, quantity))
+                            }
+                        },
+                        onChangeSupplyQuantity = { option, quantity ->
                             selections = if (quantity <= 0) {
                                 selections - option.id
                             } else {
@@ -166,14 +222,14 @@ fun RegisterSaleScreen(
 
                 item {
                     SaleActionButtons(
-                        isAddEnabled = selectedDish != null && selections.isNotEmpty(),
+                        isAddEnabled = dishSelections.isNotEmpty(),
                         onCancel = {
                             isRegistering = false
-                            selectedDish = null
+                            dishSelections = emptyMap()
                             selections = emptyMap()
                         },
                         onReset = {
-                            selectedDish = null
+                            dishSelections = emptyMap()
                             selections = emptyMap()
                         },
                         onAdd = { showSuccessDialog = true }
@@ -185,12 +241,32 @@ fun RegisterSaleScreen(
 
     if (showSuccessDialog) {
         RegisterSaleSuccessDialog(
-            selectedDish = selectedDish,
+            dishSelections = dishSelections.values.toList(),
             selections = selections.values.toList(),
             onDismiss = {
+                // Calcular el total
+                val dishTotal = dishSelections.values.sumOf { it.option.price * it.quantity }
+                val supplyTotal = selections.values.sumOf { it.option.unitPrice * it.quantity }
+                val subtotal = dishTotal + supplyTotal
+                val total = subtotal + (subtotal * 0.08) // Con impuestos
+
+                // Crear nueva venta registrada
+                val newSale = RegisteredSale(
+                    id = nextSaleId,
+                    saleNumber = "SALE-${String.format("%04d", nextSaleId)}",
+                    dishSelections = dishSelections.values.toList(),
+                    supplySelections = selections.values.toList(),
+                    totalCost = total,
+                    registeredDate = Date()
+                )
+
+                // Agregar al inicio de la lista (más recientes primero)
+                registeredSales = listOf(newSale) + registeredSales
+                nextSaleId++
+
                 showSuccessDialog = false
                 isRegistering = false
-                selectedDish = null
+                dishSelections = emptyMap()
                 selections = emptyMap()
             }
         )
@@ -338,7 +414,10 @@ private fun EmptySaleState(
                 }
                 Button(
                     onClick = onCreateSale,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4F8A5B) // Verde
+                    )
                 ) {
                     Icon(Icons.Outlined.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -354,11 +433,12 @@ private fun EmptySaleState(
 private fun SaleFormCard(
     dishOptions: List<DishOption>,
     supplyOptions: List<SupplyOption>,
-    selectedDish: DishOption?,
+    dishSelections: Map<Int, DishSelection>,
     selections: Map<Int, SupplySelection>,
     showCreationHint: Boolean,
-    onSelectDish: (DishOption) -> Unit,
-    onChangeQuantity: (SupplyOption, Int) -> Unit
+    onSelectDish: (DishOption, Int) -> Unit,
+    onChangeDishQuantity: (DishOption, Int) -> Unit,
+    onChangeSupplyQuantity: (SupplyOption, Int) -> Unit
 ) {
     CardContainer {
         Column(
@@ -367,36 +447,38 @@ private fun SaleFormCard(
             // Nueva sección de plato
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Dish",
+                    text = "Dishes",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Select one dish and the additional supplies needed.",
+                    text = "Select dishes for your sale. Use the + and - buttons to adjust quantities for each dish.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                DropdownSelector(
-                    label = "Dish",
-                    value = selectedDish?.label,
-                    placeholder = "Select a dish from your recipe",
-                    icon = Icons.Outlined.Restaurant,
-                    options = dishOptions.map { it.label },
-                    onOptionSelected = { label ->
-                        dishOptions.firstOrNull { it.label == label }?.let(onSelectDish)
+                // Mostrar platos con controles de cantidad (sin dropdown)
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    dishOptions.forEach { option ->
+                        DishRow(
+                            option = option,
+                            quantity = dishSelections[option.id]?.quantity ?: 0,
+                            onChangeQuantity = { quantity -> onChangeDishQuantity(option, quantity) }
+                        )
                     }
-                )
+                }
 
-                if (selectedDish != null) {
+                if (dishSelections.isNotEmpty()) {
                     SummaryCard(
-                        title = "Selected dish",
-                        rows = listOf("Dish" to selectedDish.label)
+                        title = "Selected dishes",
+                        rows = dishSelections.values.map {
+                            "${it.option.label} (${it.quantity}x)" to currencyFormatter.format(it.option.price * it.quantity)
+                        }
                     )
                 }
             }
 
-            Divider()
+            HorizontalDivider()
 
             // Sección existente de insumos
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -416,7 +498,7 @@ private fun SaleFormCard(
                         SupplyRow(
                             option = option,
                             quantity = selections[option.id]?.quantity ?: 0,
-                            onChangeQuantity = { quantity -> onChangeQuantity(option, quantity) }
+                            onChangeQuantity = { quantity -> onChangeSupplyQuantity(option, quantity) }
                         )
                     }
                 }
@@ -430,13 +512,14 @@ private fun SaleFormCard(
                     )
 
                     FinancialSummary(
+                        dishSelections = dishSelections.values.toList(),
                         selections = selections.values.toList()
                     )
                 }
 
-                if (showCreationHint) {
+                if (showCreationHint && dishSelections.isEmpty()) {
                     InfoHint(
-                        text = "Start by selecting a dish and the ingredients you need."
+                        text = "Start by selecting dishes from the dropdown above. Use the + and - buttons to adjust quantities."
                     )
                 }
             }
@@ -465,33 +548,59 @@ private fun DropdownSelector(
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = value ?: "",
-                onValueChange = {},
+                onValueChange = { },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { expanded = !expanded },
+                    .clickable { expanded = true },
                 readOnly = true,
-                placeholder = { if (value.isNullOrEmpty()) Text(placeholder) },
-                leadingIcon = { Icon(imageVector = icon, contentDescription = null) },
-                trailingIcon = {
+                placeholder = {
+                    Text(
+                        text = if (value.isNullOrEmpty()) placeholder else "",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                leadingIcon = {
                     Icon(
-                        imageVector = Icons.Filled.ArrowDropDown,
+                        imageVector = icon,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
-                singleLine = true
+                trailingIcon = {
+                    IconButton(onClick = { expanded = !expanded }) {
+                        Icon(
+                            imageVector = if (expanded) Icons.Filled.ArrowDropDown else Icons.Filled.ArrowDropDown,
+                            contentDescription = "Toggle dropdown",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    cursorColor = MaterialTheme.colorScheme.primary
+                )
             )
+
             DropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option) },
+                        text = {
+                            Text(
+                                text = option,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        },
                         onClick = {
                             expanded = false
                             onOptionSelected(option)
-                        }
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -546,6 +655,59 @@ private fun SupplyRow(
 
         Text(
             text = "Unit price: ${currencyFormatter.format(option.unitPrice)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+private fun DishRow(
+    option: DishOption,
+    quantity: Int,
+    onChangeQuantity: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                shape = MaterialTheme.shapes.medium
+            )
+            .padding(16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = option.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Peruvian dish",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            QuantityStepper(
+                quantity = quantity,
+                onQuantityDecrease = { onChangeQuantity((quantity - 1).coerceAtLeast(0)) },
+                onQuantityIncrease = { onChangeQuantity(quantity + 1) }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Text(
+            text = "Unit price: ${currencyFormatter.format(option.price)}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.primary
         )
@@ -613,7 +775,7 @@ private fun SummaryCard(
                     Text(
                         text = label,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (MaterialTheme.colorScheme.onSurfaceVariant == Color.Unspecified) Color.Black else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = value,
@@ -628,9 +790,10 @@ private fun SummaryCard(
 
 @Composable
 private fun FinancialSummary(
+    dishSelections: List<DishSelection>,
     selections: List<SupplySelection>
 ) {
-    val subtotal = selections.sumOf { it.option.unitPrice * it.quantity }
+    val subtotal = (selections.sumOf { it.option.unitPrice * it.quantity } + dishSelections.sumOf { it.option.price * it.quantity })
     val taxes = subtotal * 0.08
     val total = subtotal + taxes
 
@@ -648,7 +811,7 @@ private fun FinancialSummary(
             )
             SummaryRow(label = "Subtotal", value = currencyFormatter.format(subtotal))
             SummaryRow(label = "Taxes (8%)", value = currencyFormatter.format(taxes))
-            Divider()
+            HorizontalDivider()
             SummaryRow(
                 label = "Total",
                 value = currencyFormatter.format(total),
@@ -712,7 +875,10 @@ private fun SaleActionButtons(
     ) {
         OutlinedButton(
             onClick = onCancel,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFFF6B6B) // Rojo coral
+            )
         ) {
             Icon(imageVector = Icons.Default.Close, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
@@ -738,13 +904,13 @@ private fun SaleActionButtons(
 
 @Composable
 private fun RegisterSaleSuccessDialog(
-    selectedDish: DishOption?,
+    dishSelections: List<DishSelection>,
     selections: List<SupplySelection>,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         RegisterSaleSuccessContent(
-            selectedDish = selectedDish,
+            dishSelections = dishSelections,
             selections = selections,
             onDismiss = onDismiss
         )
@@ -753,7 +919,7 @@ private fun RegisterSaleSuccessDialog(
 
 @Composable
 private fun RegisterSaleSuccessContent(
-    selectedDish: DishOption?,
+    dishSelections: List<DishSelection>,
     selections: List<SupplySelection>,
     onDismiss: () -> Unit
 ) {
@@ -805,9 +971,9 @@ private fun RegisterSaleSuccessContent(
             ) {
                 SummaryCard(
                     title = "Dish",
-                    rows = listOfNotNull(
-                        selectedDish?.let { "Dish" to it.label }
-                    )
+                    rows = dishSelections.map {
+                        it.option.label to currencyFormatter.format(it.option.price)
+                    }
                 )
 
                 OutlinedCard(modifier = Modifier.fillMaxWidth()) {
@@ -847,7 +1013,10 @@ private fun RegisterSaleSuccessContent(
                     }
                 }
 
-                FinancialSummary(selections)
+                FinancialSummary(
+                    dishSelections = dishSelections,
+                    selections = selections
+                )
             }
 
             Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
@@ -876,6 +1045,169 @@ private fun CardContainer(
     }
 }
 
+@Composable
+private fun RegisteredSaleCard(
+    sale: RegisteredSale,
+    onDelete: () -> Unit
+) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Header con número de venta y botón eliminar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Sale number",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = sale.saleNumber,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete sale",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
+            // Información del total
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Total cost",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = currencyFormatter.format(sale.totalCost),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            // Fecha y hora
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Date",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = dateFormatter.format(sale.registeredDate),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Time",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = timeFormatter.format(sale.registeredDate),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            // Resumen de platos
+            if (sale.dishSelections.isNotEmpty()) {
+                HorizontalDivider()
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Dishes (${sale.dishSelections.size})",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    sale.dishSelections.forEach { dish ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "${dish.option.label} x${dish.quantity}",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = currencyFormatter.format(dish.option.price * dish.quantity),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Resumen de suministros adicionales
+            if (sale.supplySelections.isNotEmpty()) {
+                HorizontalDivider()
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Additional supplies (${sale.supplySelections.size})",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    sale.supplySelections.forEach { supply ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "${supply.option.name} x${supply.quantity}",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = currencyFormatter.format(supply.option.unitPrice * supply.quantity),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun RegisterSaleEmptyPreview() {
@@ -890,7 +1222,7 @@ private fun RegisterSaleEmptyPreview() {
 @Composable
 private fun RegisterSaleFormPreview() {
     RestockmobileTheme {
-        val dish = DishOption("Lomo Saltado", 1)
+        val dish = DishOption("Lomo Saltado", 1, 25.90)
         val supplies = listOf(
             SupplyOption(1, "Lemon", "Fresh whole lemons", 2.50),
             SupplyOption(2, "Feta cheese", "Crumbled, 1 lb bag", 4.75),
@@ -900,13 +1232,14 @@ private fun RegisterSaleFormPreview() {
             SaleFormCard(
                 dishOptions = listOf(dish),
                 supplyOptions = supplies,
-                selectedDish = dish,
+                dishSelections = mapOf(1 to DishSelection(dish, 1)),
                 selections = supplies.take(2).associate { option ->
                     option.id to SupplySelection(option, if (option.id == 1) 2 else 1)
                 },
                 showCreationHint = false,
-                onSelectDish = {},
-                onChangeQuantity = { _, _ -> }
+                onSelectDish = { _, _ -> },
+                onChangeDishQuantity = { _, _ -> },
+                onChangeSupplyQuantity = { _, _ -> }
             )
         }
     }
@@ -917,7 +1250,9 @@ private fun RegisterSaleFormPreview() {
 private fun RegisterSaleSuccessPreview() {
     RestockmobileTheme {
         RegisterSaleSuccessContent(
-            selectedDish = DishOption("Ceviche", 3),
+            dishSelections = listOf(
+                DishSelection(DishOption("Ceviche", 3, 28.90), 1)
+            ),
             selections = listOf(
                 SupplySelection(SupplyOption(1, "Lemon", "Fresh whole lemons", 2.50), 2),
                 SupplySelection(SupplyOption(2, "Feta cheese", "Crumbled, 1 lb bag", 4.75), 1)
