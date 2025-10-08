@@ -82,4 +82,16 @@ class FakeInventoryService : InventoryService {
             return Response.error(404, ResponseBody.create(null, "Custom supply not found"))
         }
     }
+    override suspend fun updateBatch(id: String, batch: BatchDto): Response<BatchDto> {
+        val index = batches.indexOfFirst { it._id == id }
+        return if (index != -1) {
+            val updated = batch.copy(_id = id)
+            batches[index] = updated
+            Response.success(updated)
+        } else {
+            Response.error(404, okhttp3.ResponseBody.create(null, "Batch not found"))
+        }
+    }
+
+
 }

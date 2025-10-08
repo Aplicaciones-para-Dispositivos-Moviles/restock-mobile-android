@@ -103,4 +103,31 @@ class InventoryRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateBatch(batch: Batch): Batch? = withContext(Dispatchers.IO) {
+        val dto = BatchDto(
+            _id = batch.id,
+            user_id = batch.userId,
+            custom_supply = batch.customSupply?.toDto(),
+            stock = batch.stock,
+            expiration_date = batch.expirationDate
+        )
+
+        val resp = service.updateBatch(batch.id, dto)
+        val updated = if (resp.isSuccessful) {
+            resp.body()?.toDomain()
+        } else null
+
+        if (updated != null && dao != null) {
+            val entity = BatchEntity(
+                id = updated.id,
+                userId = updated.userId,
+                customSupplyId = updated.customSupply?.id ?: "",
+                stock = updated.stock,
+                expirationDate = updated.expirationDate
+            )
+            dao.insert(entity) // upsert localmente
+        }
+
+        updated
+    }
 }

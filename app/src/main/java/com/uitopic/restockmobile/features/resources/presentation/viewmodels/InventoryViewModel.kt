@@ -43,48 +43,60 @@ class InventoryViewModel @Inject constructor(
         }
     }
 
-    fun addBatchFromCustom(custom: CustomSupply) {
+    // 🔹 Crear un nuevo batch
+    fun createBatch(batch: Batch) {
         viewModelScope.launch {
             try {
-                val batch = Batch(
-                    id = "",
-                    userId = custom.userId,
-                    customSupply = custom,
-                    stock = custom.minStock,
-                    expirationDate = null
-                )
-
-                val created = repository.createBatch(batch)
-                if (created != null) {
-                    _batches.value = repository.getBatches()
-                }
+                repository.createBatch(batch)
+                _batches.value = repository.getBatches()
             } catch (t: Throwable) {
-                // TODO: manejar error
+                // Fallback local si no hay backend
+                _batches.value = _batches.value + batch
             }
         }
     }
 
+    // 🔹 Actualizar un batch existente
+    fun updateBatch(updated: Batch) {
+        viewModelScope.launch {
+            try {
+                repository.updateBatch(updated)
+                _batches.value = repository.getBatches()
+            } catch (t: Throwable) {
+                // Fallback local en modo desarrollo
+                _batches.value = _batches.value.map {
+                    if (it.id == updated.id) updated else it
+                }
+            }
+        }
+    }
+
+    // 🔹 Eliminar un batch
     fun deleteBatch(id: String) {
         viewModelScope.launch {
             try {
                 repository.deleteBatch(id)
+                _batches.value = repository.getBatches()
             } catch (t: Throwable) {
-                // TODO: manejar error de borrado
-            } finally {
-                try {
-                    _batches.value = repository.getBatches()
-                } catch (_: Throwable) {}
+                // Fallback local
+                _batches.value = _batches.value.filterNot { it.id == id }
             }
         }
     }
 
+    // 🔹 Obtener batch por ID (para modo edición)
+    fun getBatchById(id: String?): Batch? {
+        if (id == null) return null
+        return _batches.value.find { it.id == id }
+    }
+
+    // 🔹 Custom supplies (como ya tenías)
     fun addCustomSupply(custom: CustomSupply) {
         viewModelScope.launch {
             try {
                 repository.createCustomSupply(custom)
                 _customSupplies.value = repository.getCustomSupplies()
             } catch (t: Throwable) {
-                // Fallback local por si no hay backend aún
                 _customSupplies.value = _customSupplies.value + custom
             }
         }
@@ -96,7 +108,6 @@ class InventoryViewModel @Inject constructor(
                 repository.updateCustomSupply(updated)
                 _customSupplies.value = repository.getCustomSupplies()
             } catch (t: Throwable) {
-                // Fallback local para desarrollo sin backend
                 _customSupplies.value = _customSupplies.value.map {
                     if (it.id == updated.id) updated else it
                 }
@@ -110,7 +121,6 @@ class InventoryViewModel @Inject constructor(
                 repository.deleteCustomSupply(custom.id)
                 _customSupplies.value = repository.getCustomSupplies()
             } catch (t: Throwable) {
-                // Fallback local por si no hay backend aún
                 _customSupplies.value = _customSupplies.value.filterNot { it.id == custom.id }
             }
         }

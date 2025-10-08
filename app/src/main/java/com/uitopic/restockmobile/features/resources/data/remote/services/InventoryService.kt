@@ -19,8 +19,12 @@ interface InventoryService {
     @POST("batches")
     suspend fun createBatch(@Body batch: BatchDto): Response<BatchDto>
 
+    @PUT("batches/{id}")
+    suspend fun updateBatch(@Path("id") id: String, @Body batch: BatchDto): Response<BatchDto>
+
     @DELETE("batches/{id}")
     suspend fun deleteBatch(@Path("id") id: String): Response<Unit>
 
-    suspend fun deleteCustomSupply(id: String): Response<Unit>
+    @DELETE("custom_supplies/{id}")
+    suspend fun deleteCustomSupply(@Path("id") id: String): Response<Unit>
 }
