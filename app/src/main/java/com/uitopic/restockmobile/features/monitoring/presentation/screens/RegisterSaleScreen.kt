@@ -61,6 +61,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.uitopic.restockmobile.features.monitoring.data.DishDataSource
+import com.uitopic.restockmobile.features.monitoring.data.SupplyDataSource
+import com.uitopic.restockmobile.features.monitoring.domain.model.DishOption
+import com.uitopic.restockmobile.features.monitoring.domain.model.DishSelection
+import com.uitopic.restockmobile.features.monitoring.domain.model.RegisteredSale
+import com.uitopic.restockmobile.features.monitoring.domain.model.SupplyOption
+import com.uitopic.restockmobile.features.monitoring.domain.model.SupplySelection
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -71,66 +78,15 @@ private val currencyFormatter = NumberFormat.getCurrencyInstance(Locale.US)
 private val dateFormatter = SimpleDateFormat("MMM dd, yyyy", Locale.US)
 private val timeFormatter = SimpleDateFormat("hh:mm a", Locale.US)
 
-private data class DishOption(
-    val label: String,
-    val id: Int,
-    val price: Double
-)
-
-private data class SupplyOption(
-    val id: Int,
-    val name: String,
-    val description: String,
-    val unitPrice: Double
-)
-
-private data class SupplySelection(
-    val option: SupplyOption,
-    val quantity: Int
-)
-
-private data class DishSelection(
-    val option: DishOption,
-    val quantity: Int
-)
-
-private data class RegisteredSale(
-    val id: Int,
-    val saleNumber: String,
-    val dishSelections: List<DishSelection>,
-    val supplySelections: List<SupplySelection>,
-    val totalCost: Double,
-    val registeredDate: Date
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterSaleScreen(
     onBack: () -> Unit
 ) {
-    // Lista de platos peruanos con precios
-    val dishOptions = remember {
-        listOf(
-            DishOption("Lomo Saltado", 1, 25.90),
-            DishOption("Aji de Gallina", 2, 22.50),
-            DishOption("Ceviche", 3, 28.90),
-            DishOption("Arroz con Pollo", 4, 18.90),
-            DishOption("Seco de Res", 5, 24.90),
-            DishOption("Anticuchos", 6, 16.50),
-            DishOption("Papa a la Huancaina", 7, 12.90),
-            DishOption("Tacu Tacu", 8, 19.90),
-            DishOption("Rocoto Relleno", 9, 21.50)
-        )
-    }
-    val supplyOptions = remember {
-        listOf(
-            SupplyOption(1, "Lemon", "Fresh whole lemons", 2.50),
-            SupplyOption(2, "Feta cheese", "Crumbled, 1 lb bag", 4.75),
-            SupplyOption(3, "Olive oil", "Extra virgin 500 ml", 7.80),
-            SupplyOption(4, "Pasta", "Rigatoni, 1 lb box", 3.60),
-            SupplyOption(5, "Flour", "00 flour, 1 kg", 2.90)
-        )
-    }
+    // Cargar datos desde las fuentes de datos
+    val dishOptions = remember { DishDataSource.getDishOptions() }
+    val supplyOptions = remember { SupplyDataSource.getSupplyOptions() }
 
     var isRegistering by remember { mutableStateOf(false) }
     var dishSelections by remember { mutableStateOf<Map<Int, DishSelection>>(emptyMap()) }
