@@ -58,11 +58,11 @@ fun RestockApp(tokenManager: TokenManager) {
     // ==========================================
 
     // App original sin bypass
-    //val startDestination = if (tokenManager.isLoggedIn()) {
-    //    HomeRoute.Home.route
-    //} else {
-    //    "auth_graph"
-    //}
+    val startDestination = if (tokenManager.isLoggedIn()) {
+        HomeRoute.Home.route
+    } else {
+        "auth_graph"
+    }
 
     // ==========================================
     // BYPASS DESACTIVADOS (para desarrollo)
@@ -77,12 +77,13 @@ fun RestockApp(tokenManager: TokenManager) {
     // }
 
     // Bypass directo a Monitoring/Sales - DESACTIVADO
-    val FORCE_MONITORING_START = true
-    val startDestination = when {
-         FORCE_MONITORING_START -> MonitoringRoute.Sales.route
-         tokenManager.isLoggedIn() -> HomeRoute.Home.route
-         else -> "auth_graph"
-    }
+    //val FORCE_MONITORING_START = true
+    //val startDestination = when {
+    //     FORCE_MONITORING_START -> MonitoringRoute.Sales.route
+    //     tokenManager.isLoggedIn() -> HomeRoute.Home.route
+    //     else -> "auth_graph"
+    //}
+
 
     NavHost(
         navController = navController,
