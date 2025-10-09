@@ -3,6 +3,7 @@ package com.uitopic.restockmobile.features.resources.presentation.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowCircleLeft
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.domain.models.Supply
 import com.uitopic.restockmobile.features.resources.domain.models.UnitModel
@@ -58,13 +59,13 @@ fun SupplyFormScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.Default.ArrowBack,
+                            Icons.Default.ArrowCircleLeft,
                             contentDescription = "Back",
                             tint = greenColor
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White,
                     titleContentColor = Color.Black
                 )
@@ -95,7 +96,7 @@ fun SupplyFormScreen(
                 )
             } else {
                 Text(
-                    text = "Base Supply: ${existingSupply!!.supply.name}",
+                    text = "Base Supply: ${existingSupply.supply.name}",
                     fontWeight = FontWeight.Medium,
                     fontSize = 16.sp
                 )
