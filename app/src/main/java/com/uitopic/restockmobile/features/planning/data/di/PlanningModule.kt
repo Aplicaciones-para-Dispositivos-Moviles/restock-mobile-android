@@ -13,13 +13,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object PlanningModule {
-
-    @Provides
-    @Singleton
-    fun provideRecipeApiService(retrofit: Retrofit): RecipeApiService {
-        return retrofit.create(RecipeApiService::class.java)
-    }
-
+    
     @Provides
     @Singleton
     fun provideRecipeRepository(
