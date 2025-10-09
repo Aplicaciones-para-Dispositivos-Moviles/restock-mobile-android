@@ -95,6 +95,8 @@ class InventoryRepositoryImpl @Inject constructor(
             ?.updateCustomSupply(dto)
         if (resp != null && resp.isSuccessful) resp.body()?.toDomain() else null
     }
+
+
     override suspend fun deleteCustomSupply(customSupplyId: String): Unit = withContext(Dispatchers.IO) {
         try {
             service.deleteCustomSupply(customSupplyId)
