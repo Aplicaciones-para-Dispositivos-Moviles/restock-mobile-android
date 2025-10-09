@@ -4,6 +4,7 @@ import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.core.auth.remote.services.AuthApiService
 import com.uitopic.restockmobile.core.network.ApiConstants
 import com.uitopic.restockmobile.core.network.AuthInterceptor
+import com.uitopic.restockmobile.features.profiles.data.remote.services.ProfileApiService
 
 import dagger.Module
 import dagger.Provides
@@ -37,7 +38,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    @Named("ApiOkHttp")  // Nombre para diferenciarlo
+    @Named("ApiOkHttp")
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
         loggingInterceptor: HttpLoggingInterceptor
@@ -53,7 +54,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    @ApiRetrofit  // ← Qualifier personalizado
+    @ApiRetrofit
     fun provideRetrofit(@Named("ApiOkHttp") okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(ApiConstants.BASE_URL)
@@ -66,5 +67,11 @@ object NetworkModule {
     @Singleton
     fun provideAuthApiService(@ApiRetrofit retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProfileApiService(@ApiRetrofit retrofit: Retrofit): ProfileApiService {
+        return retrofit.create(ProfileApiService::class.java)
     }
 }

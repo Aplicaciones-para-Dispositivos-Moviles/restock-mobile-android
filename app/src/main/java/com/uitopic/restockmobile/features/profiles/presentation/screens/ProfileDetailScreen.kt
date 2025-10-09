@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -29,6 +30,7 @@ fun ProfileDetailScreen(
     onNavigateToEditBusiness: () -> Unit,
     onNavigateToChangePassword: () -> Unit,
     onNavigateToDeleteAccount: () -> Unit,
+    onLogout: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val state = viewModel.profileState
@@ -55,13 +57,19 @@ fun ProfileDetailScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Profile Details") },
+                actions = {
+                    IconButton(onClick = {
+                        viewModel.logout()
+                        onLogout()
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-
+        }
     ) { padding ->
         Box(
             modifier = Modifier
@@ -227,6 +235,7 @@ private fun ProfileContent(
             Spacer(modifier = Modifier.width(8.dp))
             Text("Delete Account")
         }
+
     }
 }
 

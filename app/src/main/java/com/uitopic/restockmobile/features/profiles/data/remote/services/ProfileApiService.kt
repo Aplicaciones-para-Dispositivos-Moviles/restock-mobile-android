@@ -14,32 +14,32 @@ import retrofit2.http.Path
 
 interface ProfileApiService {
 
-    @GET("profiles/{id}")
+    @GET("profiles/{userId}")
     suspend fun getProfileById(
-        @Path("id") id: String
+        @Path("userId") userId: Int
     ): Response<ProfileDto>
 
-    @PUT("profiles/{id}/personal")
+    @PUT("profiles/{userId}/personal")
     suspend fun updatePersonalData(
-        @Path("id") id: String,
+        @Path("userId") userId: Int,
         @Body request: UpdatePersonalDataDto
     ): Response<ProfileDto>
 
-    @PUT("profiles/{id}/business")
+    @PUT("profiles/{userId}/business")
     suspend fun updateBusinessData(
-        @Path("id") id: String,
+        @Path("userId") userId: Int,
         @Body request: UpdateBusinessDataDto
     ): Response<ProfileDto>
 
-    @PUT("profiles/{id}/password")
+    @PUT("profiles/{userId}/password")
     suspend fun changePassword(
-        @Path("id") id: String,
+        @Path("userId") userId: Int,
         @Body request: ChangePasswordDto
     ): Response<Unit>
 
-    @DELETE("profiles/{id}")
+    @DELETE("profiles/{userId}")
     suspend fun deleteProfile(
-        @Path("id") id: String
+        @Path("userId") userId: Int
     ): Response<Unit>
 
     @GET("business-categories")

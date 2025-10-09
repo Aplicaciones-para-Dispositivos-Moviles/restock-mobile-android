@@ -87,6 +87,16 @@ fun EditBusinessDataScreen(
                 singleLine = true
             )
 
+            OutlinedTextField(
+                value = state.description,
+                onValueChange = viewModel::onDescriptionChange,
+                label = { Text("Description") },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !state.isLoading,
+                minLines = 3,
+                maxLines = 5
+            )
+
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {

@@ -1,7 +1,7 @@
 package com.uitopic.restockmobile.features.profiles.domain.models
 
 data class Profile(
-    val id: String,
+    val id: Int,
     val firstName: String,
     val lastName: String,
     val email: String,
