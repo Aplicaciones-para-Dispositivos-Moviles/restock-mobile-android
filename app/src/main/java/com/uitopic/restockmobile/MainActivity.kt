@@ -21,6 +21,7 @@ import com.uitopic.restockmobile.features.auth.presentation.navigation.authNavGr
 import com.uitopic.restockmobile.features.home.presentation.navigation.HomeRoute
 import com.uitopic.restockmobile.features.home.presentation.navigation.homeNavGraph
 import com.uitopic.restockmobile.features.profiles.presentation.navigation.profileNavGraph
+import com.uitopic.restockmobile.features.resources.presentation.navigation.inventoryNavGraph
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -51,7 +52,7 @@ fun RestockApp(tokenManager: TokenManager) {
     val navController = rememberNavController()
 
     // Determinar ruta inicial
-    val startDestination = if (tokenManager.isLoggedIn()) {
+    val startDestination = if (true) {
         HomeRoute.Home.route
     } else {
         "auth_graph"
@@ -84,6 +85,7 @@ fun RestockApp(tokenManager: TokenManager) {
                 }
             }
         )
+        inventoryNavGraph(navController)
     }
 }
 
