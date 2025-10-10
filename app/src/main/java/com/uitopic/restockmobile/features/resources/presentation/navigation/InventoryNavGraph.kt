@@ -15,7 +15,7 @@ import com.uitopic.restockmobile.features.resources.presentation.viewmodels.Inve
 
 fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
 
-    // 🟢 Pantalla principal del inventario
+    // Pantalla principal del inventario
     composable("inventory") {
         val viewModel: InventoryViewModel = hiltViewModel()
         InventoryScreen(
