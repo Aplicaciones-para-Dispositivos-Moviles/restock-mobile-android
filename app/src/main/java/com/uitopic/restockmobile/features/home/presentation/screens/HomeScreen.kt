@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // features/home/presentation/HomeScreen.kt
 package com.uitopic.restockmobile.features.home.presentation.screens
 
@@ -20,10 +21,25 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
+=======
+package com.uitopic.restockmobile.features.home.presentation.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.outlined.PointOfSale
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+>>>>>>> feature/monitoring
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+<<<<<<< HEAD
     navController: NavHostController,
     userName: String = "User",
     userEmail: String = "user@example.com",
@@ -68,10 +84,27 @@ fun HomeScreen(
                     scope.launch {
                         drawerState.close()
                         onLogout()
+=======
+    onNavigateToProfile: () -> Unit,
+    onNavigateToSales: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Restock") },
+                actions = {
+                    IconButton(onClick = onNavigateToProfile) {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Profile",
+                            modifier = Modifier.size(32.dp)
+                        )
+>>>>>>> feature/monitoring
                     }
                 }
             )
         }
+<<<<<<< HEAD
     ) {
         Scaffold(
             topBar = {
@@ -404,6 +437,67 @@ fun QuickActionCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                 )
+=======
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Welcome to Restock!",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Your restaurant management app",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Text(
+                        text = "Quick Actions",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    ElevatedButton(
+                        onClick = onNavigateToProfile,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.AccountCircle, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("View Profile")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    ElevatedButton(
+                        onClick = onNavigateToSales,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Outlined.PointOfSale, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Register sale")
+                    }
+                }
+>>>>>>> feature/monitoring
             }
         }
     }
