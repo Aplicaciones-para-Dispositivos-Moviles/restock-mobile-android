@@ -4,6 +4,8 @@ import com.uitopic.restockmobile.features.resources.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.domain.models.Supply
 
+//Inventory repository interface
+
 interface InventoryRepository {
     // --- Supplies ---
     suspend fun getSupplies(): List<Supply>
