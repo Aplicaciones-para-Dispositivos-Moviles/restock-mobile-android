@@ -4,10 +4,7 @@ import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.core.auth.remote.services.AuthApiService
 import com.uitopic.restockmobile.core.network.ApiConstants
 import com.uitopic.restockmobile.core.network.AuthInterceptor
-<<<<<<< HEAD
 import com.uitopic.restockmobile.features.planning.data.remote.services.RecipeApiService
-=======
->>>>>>> feature/monitoring
 import com.uitopic.restockmobile.features.profiles.data.remote.services.ProfileApiService
 
 import dagger.Module
@@ -78,13 +75,10 @@ object NetworkModule {
     fun provideProfileApiService(@ApiRetrofit retrofit: Retrofit): ProfileApiService {
         return retrofit.create(ProfileApiService::class.java)
     }
-<<<<<<< HEAD
 
     @Provides
     @Singleton
     fun provideRecipeApiService(@ApiRetrofit retrofit: Retrofit): RecipeApiService {
         return retrofit.create(RecipeApiService::class.java)
     }
-=======
->>>>>>> feature/monitoring
 }

@@ -1,13 +1,6 @@
 package com.uitopic.restockmobile.core.network
 
 object ApiConstants {
-<<<<<<< HEAD
-    // IMPORTANTE: Cambiar según el entorno
-    // Emulador Android: usa 10.0.2.2
-    // Dispositivo físico: usa tu IP local (192.168.18.111)
-    private const val BASE_IP = "10.0.2.2" // Tu IP local
-    private const val PORT = "8080"
-=======
     // ==========================================
     // CONFIGURACIÓN DEL BACKEND
     // ==========================================
@@ -29,7 +22,6 @@ object ApiConstants {
 
     private const val BASE_IP = "10.0.2.2" // Cambiar aquí con la IP de tu backend
     private const val PORT = "8080"        // Cambiar aquí con el puerto de tu backend
->>>>>>> feature/monitoring
 
     const val BASE_URL = "http://$BASE_IP:$PORT/api/v1/"
 
