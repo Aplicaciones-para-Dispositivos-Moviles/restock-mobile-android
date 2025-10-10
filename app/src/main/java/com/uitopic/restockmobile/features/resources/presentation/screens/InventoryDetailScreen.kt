@@ -16,6 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.uitopic.restockmobile.features.resources.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.presentation.viewmodels.InventoryViewModel
 
+//Inventory detail information
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InventoryDetailScreen(
