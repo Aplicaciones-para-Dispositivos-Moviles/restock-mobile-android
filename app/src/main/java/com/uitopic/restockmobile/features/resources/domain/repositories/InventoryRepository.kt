@@ -4,6 +4,8 @@ import com.uitopic.restockmobile.features.resources.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.domain.models.Supply
 
+//Inventory repository interface
+
 interface InventoryRepository {
     // --- Supplies ---
     suspend fun getSupplies(): List<Supply>
@@ -12,7 +14,7 @@ interface InventoryRepository {
     suspend fun getCustomSupplies(): List<CustomSupply>
     suspend fun createCustomSupply(custom: CustomSupply): CustomSupply?
     suspend fun updateCustomSupply(custom: CustomSupply): CustomSupply?
-    suspend fun deleteCustomSupply(customSupplyId: String)
+    suspend fun deleteCustomSupply(customSupplyId: Int)
 
     // --- Batches ---
     suspend fun getBatches(): List<Batch>

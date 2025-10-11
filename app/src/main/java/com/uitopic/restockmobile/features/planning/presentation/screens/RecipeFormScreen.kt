@@ -150,7 +150,7 @@ fun RecipeFormScreen(
                     RecipeFormEvent.AddSupply(
                         RecipeSupplyItem(
                             supplyId = supply.id.toInt(),
-                            supplyName = supply.supply.name,
+                            supplyName = supply.supply!!.name,
                             quantity = quantity,
                             unit = supply.unit.name
                         )
@@ -536,7 +536,7 @@ fun SupplySelectionDialog(
                             .filter { it.id.toInt() !in selectedSupplies }
                             .forEach { supply ->
                                 DropdownMenuItem(
-                                    text = { Text("${supply.supply.name} (${supply.unit})") },
+                                    text = { Text("${supply.supply!!.name} (${supply.unit})") },
                                     onClick = {
                                         selectedSupply = supply
                                         expanded = false

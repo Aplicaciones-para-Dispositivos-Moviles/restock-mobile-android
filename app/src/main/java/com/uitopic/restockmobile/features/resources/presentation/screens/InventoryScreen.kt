@@ -1,5 +1,6 @@
 package com.uitopic.restockmobile.features.resources.presentation
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,14 +39,50 @@ fun InventoryScreen(
     val customSupplies by viewModel.customSupplies.collectAsState()
     val batches by viewModel.batches.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    val supplies by viewModel.supplies.collectAsState()
 
-    val filteredSupplies = customSupplies.filter {
-        it.supply.name.contains(searchQuery, ignoreCase = true)
+    val customSuppliesWithNames = customSupplies.map { custom ->
+        val fullSupply = supplies.find { it.id == custom.supplyId } ?: custom.supply
+        custom.copy(supply = fullSupply)
     }
-    val filteredBatches = batches.filter {
+
+    val filteredSupplies = customSuppliesWithNames.filter {
+        it.supply?.name?.contains(searchQuery, ignoreCase = true) == true
+    }
+
+    val batchesWithSupplies = batches.map { batch ->
+        // Encuentra el CustomSupply completo usando customSupplyId
+        val fullCustomSupply = customSupplies.find { it.id == batch.customSupply?.id }
+
+        // Encuentra el Supply completo usando supplyId del CustomSupply
+        val fullSupply = fullCustomSupply?.let { cs ->
+            supplies.find { it.id == cs.supplyId } ?: cs.supply
+        }
+
+        batch.copy(
+            customSupply = fullCustomSupply?.copy(supply = fullSupply)
+        )
+    }
+
+// Log para verificar
+    batchesWithSupplies.forEach { batch ->
+        Log.d(
+            "InventoryScreen",
+            "BatchWithSupply: id=${batch.id}, stock=${batch.stock}, customSupplyId=${batch.customSupply?.id}, supplyName=${batch.customSupply?.supply?.name}"
+        )
+    }
+
+    val filteredBatches = batchesWithSupplies.filter {
         it.customSupply?.supply?.name?.contains(searchQuery, ignoreCase = true) == true
     }
 
+// Log para ver los batches filtrados según búsqueda
+    filteredBatches.forEach { batch ->
+        Log.d(
+            "InventoryScreen",
+            "FilteredBatch: id=${batch.id}, stock=${batch.stock}, customSupplyId=${batch.customSupply?.id}, supplyName=${batch.customSupply?.supply?.name}"
+        )
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         val lifecycle = lifecycleOwner.lifecycle
@@ -137,7 +174,8 @@ fun InventoryScreen(
                                 verticalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(custom.supply.name, fontWeight = FontWeight.SemiBold)
+                                    Log.d("InventoryScreen", "CustomSupply: $custom, Supply: ${custom.supply}, Name: ${custom.supply?.name}")
+                                    Text(custom.supply?.name ?: "", fontWeight = FontWeight.SemiBold)
                                     Text("S/. ${custom.price}")
                                     Text("Min: ${custom.minStock} / Max: ${custom.maxStock}")
                                 }
