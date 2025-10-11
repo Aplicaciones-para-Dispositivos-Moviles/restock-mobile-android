@@ -41,6 +41,7 @@ fun SignInScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
@@ -75,12 +76,14 @@ fun SignInScreen(
                 isError = state.usernameError != null,
                 supportingText = state.usernameError?.let { { Text(it) } },
                 enabled = !state.isLoading,
-                singleLine = true
+                singleLine = true,
+                shape = MaterialTheme.shapes.large
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
+                shape = MaterialTheme.shapes.large,
                 value = state.password,
                 onValueChange = viewModel::onSignInPasswordChange,
                 label = { Text("Password") },
@@ -116,6 +119,7 @@ fun SignInScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
+                shape = MaterialTheme.shapes.large,
                 onClick = { viewModel.signIn() },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !state.isLoading
