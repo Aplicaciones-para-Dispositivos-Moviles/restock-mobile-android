@@ -73,9 +73,9 @@ fun BatchFormScreen(
             if (!isEditing) {
                 Text("Select Custom Supply", fontWeight = FontWeight.SemiBold)
                 DropdownMenuField(
-                    options = customSupplies.map { it.supply.name },
+                    options = customSupplies.map { it.supply!!.name },
                     selected = selectedCustom?.supply?.name,
-                    onSelect = { name -> selectedCustom = customSupplies.find { it.supply.name == name } }
+                    onSelect = { name -> selectedCustom = customSupplies.find { it.supply!!.name == name } }
                 )
             } else {
                 Text("Custom Supply: ${existingBatch!!.customSupply?.supply?.name}", fontWeight = FontWeight.SemiBold)
@@ -129,7 +129,7 @@ fun BatchFormScreen(
                     if (selectedCustom != null && stock.isNotBlank()) {
                         val newBatch = Batch(
                             id = existingBatch?.id ?: "",
-                            userId = existingBatch?.userId ?: "demoUser",
+                            userId = existingBatch?.userId ?: 1,
                             customSupply = selectedCustom!!,
                             stock = stock.toInt(),
                             expirationDate = expirationDate.ifBlank { null }

@@ -1,7 +1,7 @@
 package com.uitopic.restockmobile.features.resources.data.remote.models
 
 data class SupplyDto(
-    val _id: String?,
+    val id: Int?,
     val name: String?,
     val description: String?,
     val perishable: Boolean?,

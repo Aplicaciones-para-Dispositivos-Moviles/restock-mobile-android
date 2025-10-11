@@ -5,7 +5,10 @@ data class CustomSupply(
     val minStock: Int,
     val maxStock: Int,
     val price: Double,
-    val userId: String?,
-    val supply: Supply,
-    val unit: UnitModel
+    val userId: Int?,
+    val supplyId: Int,
+    val supply: Supply? = null,
+    val unit: UnitModel,
+    val currencyCode: String,
+    val description: String,
 )

@@ -130,7 +130,7 @@ fun BatchDetailContent(batch: Batch, onEdit: () -> Unit, onDelete: () -> Unit, m
 
                 DetailRow("Current stock:", batch.stock.toString())
                 DetailRow("Expiration date:", batch.expirationDate ?: "-")
-                DetailRow("User ID:", batch.userId ?: "-")
+                DetailRow("User ID:", (batch.userId ?: 1).toString())
                 DetailRow("Batch ID:", batch.id)
             }
         }

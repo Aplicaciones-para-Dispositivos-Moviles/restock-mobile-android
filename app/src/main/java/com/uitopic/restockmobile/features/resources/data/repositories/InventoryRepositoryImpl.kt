@@ -1,8 +1,7 @@
 package com.uitopic.restockmobile.features.resources.data.repositories
 
-import com.uitopic.restockmobile.features.resources.data.local.dao.BatchDao
-import com.uitopic.restockmobile.features.resources.data.local.mappers.toDomain
-import com.uitopic.restockmobile.features.resources.data.local.models.BatchEntity
+import android.util.Log
+import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.resources.data.remote.mappers.toDomain
 import com.uitopic.restockmobile.features.resources.data.remote.mappers.toDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.BatchDto
@@ -17,119 +16,131 @@ import javax.inject.Inject
 
 class InventoryRepositoryImpl @Inject constructor(
     private val service: InventoryService,
-    private val dao: BatchDao?
+    private val tokenManager: TokenManager
 ) : InventoryRepository {
 
+    // ---------------------------------------------------------
+    // SUPPLIES
+    // ---------------------------------------------------------
     override suspend fun getSupplies(): List<Supply> = withContext(Dispatchers.IO) {
         val resp = service.getSupplies()
         if (resp.isSuccessful) {
-            resp.body()?.map { dto -> dto.toDomain() } ?: emptyList()
+            resp.body()?.map { it.toDomain() } ?: emptyList()
         } else emptyList()
     }
 
+    // ---------------------------------------------------------
+    // CUSTOM SUPPLIES
+    // ---------------------------------------------------------
     override suspend fun getCustomSupplies(): List<CustomSupply> = withContext(Dispatchers.IO) {
         val resp = service.getCustomSupplies()
         if (resp.isSuccessful) {
-            resp.body()?.map { dto -> dto.toDomain() } ?: emptyList()
+            resp.body()?.map { it.toDomain() } ?: emptyList()
         } else emptyList()
     }
 
+    override suspend fun createCustomSupply(custom: CustomSupply): CustomSupply? =
+        withContext(Dispatchers.IO) {
+            try {
+                val userId = tokenManager.getUserId()
+                Log.d("InventoryRepository", "User ID obtenido: $userId")
+
+                if (userId == null) {
+                    Log.e("InventoryRepository", "User ID es null, no se puede crear supply.")
+                    return@withContext null
+                }
+
+                val dto = custom.toDto(userId)
+                Log.d("InventoryRepository", "DTO enviado: $dto")
+
+                val response = service.createCustomSupply(dto)
+                Log.d("InventoryRepository", "Response code: ${response.code()} - success: ${response.isSuccessful}")
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    Log.d("InventoryRepository", "Respuesta exitosa: $body")
+                    body?.toDomain()
+                } else {
+                    Log.e("InventoryRepository", "Error del servidor: ${response.errorBody()?.string()}")
+                    null
+                }
+            } catch (e: Exception) {
+                Log.e("InventoryRepository", "Excepción al crear supply: ${e.message}", e)
+                null
+            }
+        }
+
+    override suspend fun updateCustomSupply(custom: CustomSupply): CustomSupply? =
+        withContext(Dispatchers.IO) {
+            try {
+                val userId = tokenManager.getUserId() ?: return@withContext null
+                val id = custom.id ?: return@withContext null
+                val dto = custom.toDto(userId)
+                val response = service.updateCustomSupply(id, dto)
+                if (response.isSuccessful) response.body()?.toDomain() else null
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+    override suspend fun deleteCustomSupply(customSupplyId: String): Unit =
+        withContext(Dispatchers.IO) {
+            try {
+                service.deleteCustomSupply(customSupplyId)
+            } catch (_: Exception) {
+                // Ignorar errores
+            }
+        }
+
+    // ---------------------------------------------------------
+    // BATCHES
+    // ---------------------------------------------------------
     override suspend fun getBatches(): List<Batch> = withContext(Dispatchers.IO) {
         val resp = service.getBatches()
-        val remote: List<Batch> = if (resp.isSuccessful) {
-            resp.body()?.map { dto -> dto.toDomain() } ?: emptyList()
+        if (resp.isSuccessful) {
+            resp.body()?.map { it.toDomain() } ?: emptyList()
         } else emptyList()
-
-        if (dao != null) {
-            val local = dao.fetchAll().map { e -> e.toDomain() }
-            val map = (local + remote).associateBy { it.id }
-            map.values.toList()
-        } else remote
     }
 
     override suspend fun createBatch(batch: Batch): Batch? = withContext(Dispatchers.IO) {
-        val dto = BatchDto(
-            _id = null,
-            user_id = batch.userId,
-            custom_supply = batch.customSupply?.toDto(),
-            stock = batch.stock,
-            expiration_date = batch.expirationDate
-        )
-
-        val resp = service.createBatch(dto)
-        val new = if (resp.isSuccessful) {
-            resp.body()?.toDomain()
-        } else null
-
-        if (new != null && dao != null) {
-            val entity = BatchEntity(
-                id = new.id,
-                userId = new.userId,
-                customSupplyId = new.customSupply?.id ?: "",
-                stock = new.stock,
-                expirationDate = new.expirationDate
-            )
-            dao.insert(entity)
-        }
-        new
-    }
-
-    override suspend fun deleteBatch(batchId: String): Unit = withContext(Dispatchers.IO) {
-        service.deleteBatch(batchId)
-        // remove local if present
-        dao?.fetchAll()?.find { it.id == batchId }?.let {
-            dao.delete(it)
-        }
-    }
-
-    override suspend fun createCustomSupply(custom: CustomSupply): CustomSupply? = withContext(Dispatchers.IO) {
-        val dto = custom.toDto()
-        val resp = (service as? com.uitopic.restockmobile.features.resources.data.remote.services.FakeInventoryService)
-            ?.createCustomSupply(dto)
-        if (resp != null && resp.isSuccessful) resp.body()?.toDomain() else null
-    }
-
-    override suspend fun updateCustomSupply(custom: CustomSupply): CustomSupply? = withContext(Dispatchers.IO) {
-        val dto = custom.toDto()
-        val resp = (service as? com.uitopic.restockmobile.features.resources.data.remote.services.FakeInventoryService)
-            ?.updateCustomSupply(dto)
-        if (resp != null && resp.isSuccessful) resp.body()?.toDomain() else null
-    }
-
-
-    override suspend fun deleteCustomSupply(customSupplyId: String): Unit = withContext(Dispatchers.IO) {
         try {
-            service.deleteCustomSupply(customSupplyId)
-        } catch (t: Throwable) {
-            // ignore / log
+            val dto = BatchDto(
+                id = null,
+                userId = batch.userId,
+                custom_supply = batch.customSupply?.toDto(batch.userId ?: 0),
+                stock = batch.stock,
+                expiration_date = batch.expirationDate
+            )
+
+            val resp = service.createBatch(dto)
+            if (resp.isSuccessful) resp.body()?.toDomain() else null
+        } catch (e: Exception) {
+            null
         }
     }
 
     override suspend fun updateBatch(batch: Batch): Batch? = withContext(Dispatchers.IO) {
-        val dto = BatchDto(
-            _id = batch.id,
-            user_id = batch.userId,
-            custom_supply = batch.customSupply?.toDto(),
-            stock = batch.stock,
-            expiration_date = batch.expirationDate
-        )
-
-        val resp = service.updateBatch(batch.id, dto)
-        val updated = if (resp.isSuccessful) {
-            resp.body()?.toDomain()
-        } else null
-
-        if (updated != null && dao != null) {
-            val entity = BatchEntity(
-                id = updated.id,
-                userId = updated.userId,
-                customSupplyId = updated.customSupply?.id ?: "",
-                stock = updated.stock,
-                expirationDate = updated.expirationDate
+        try {
+            val dto = BatchDto(
+                id = batch.id,
+                userId = batch.userId,
+                custom_supply = batch.customSupply?.toDto(batch.userId ?: 0),
+                stock = batch.stock,
+                expiration_date = batch.expirationDate
             )
-            dao.insert(entity) // upsert localmente
-        }
 
-        updated
+            val resp = service.updateBatch(batch.id, dto)
+            if (resp.isSuccessful) resp.body()?.toDomain() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override suspend fun deleteBatch(batchId: String): Unit = withContext(Dispatchers.IO) {
+        try {
+            service.deleteBatch(batchId)
+        } catch (_: Exception) {
+            // Ignorar errores
+        }
     }
 }

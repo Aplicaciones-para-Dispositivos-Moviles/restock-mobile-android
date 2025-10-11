@@ -40,7 +40,7 @@ fun InventoryScreen(
     var searchQuery by remember { mutableStateOf("") }
 
     val filteredSupplies = customSupplies.filter {
-        it.supply.name.contains(searchQuery, ignoreCase = true)
+        it.supply!!.name.contains(searchQuery, ignoreCase = true)
     }
     val filteredBatches = batches.filter {
         it.customSupply?.supply?.name?.contains(searchQuery, ignoreCase = true) == true
@@ -137,7 +137,7 @@ fun InventoryScreen(
                                 verticalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(custom.supply.name, fontWeight = FontWeight.SemiBold)
+                                    Text(custom.supply!!.name, fontWeight = FontWeight.SemiBold)
                                     Text("S/. ${custom.price}")
                                     Text("Min: ${custom.minStock} / Max: ${custom.maxStock}")
                                 }

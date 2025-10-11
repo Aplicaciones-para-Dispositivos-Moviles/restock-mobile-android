@@ -1,5 +1,6 @@
 package com.uitopic.restockmobile.features.resources.presentation.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -81,6 +82,7 @@ fun SupplyFormScreen(
         ) {
             // --- Supply selection ---
             if (!isEditing) {
+                Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
                 Text(
                     text = "Select Base Supply",
                     fontWeight = FontWeight.Medium,
@@ -95,8 +97,9 @@ fun SupplyFormScreen(
                     }
                 )
             } else {
+                Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
                 Text(
-                    text = "Base Supply: ${existingSupply.supply.name}",
+                    text = "Base Supply: ${existingSupply.supply}",
                     fontWeight = FontWeight.Medium,
                     fontSize = 16.sp
                 )
@@ -132,18 +135,20 @@ fun SupplyFormScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // --- Action button ---
             Button(
                 onClick = {
+                    Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
                     if (selectedSupply != null && minStock.isNotBlank() && maxStock.isNotBlank() && price.isNotBlank()) {
                         val newCustom = CustomSupply(
                             id = existingSupply?.id ?: "",
-                            userId = existingSupply?.userId ?: "demoUser",
+                            userId = existingSupply?.userId ?: 1,
                             minStock = minStock.toInt(),
                             maxStock = maxStock.toInt(),
                             price = price.toDouble(),
-                            supply = selectedSupply!!,
-                            unit = existingSupply?.unit ?: UnitModel("Unit", "u")
+                            supplyId = selectedSupply?.id ?: 0,
+                            unit = existingSupply?.unit ?: UnitModel("Unit", "u"),
+                            currencyCode = "PEN",
+                            description = "Insumo por defecto",
                         )
 
                         if (isEditing) viewModel.updateCustomSupply(newCustom)
