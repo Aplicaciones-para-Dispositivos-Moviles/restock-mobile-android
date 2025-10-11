@@ -43,7 +43,7 @@ fun SupplyDetailScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(customSupply.supply.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(customSupply.supply!!.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text("Precio: S/. ${customSupply.price}")
                 Text("Stock mínimo: ${customSupply.minStock}")
                 Text("Stock máximo: ${customSupply.maxStock}")
