@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,20 +18,19 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    navController: NavHostController,
     userName: String = "User",
     userEmail: String = "user@example.com",
     userAvatar: String = "",
     onNavigateToProfile: () -> Unit,
     onNavigateToRecipes: () -> Unit,
     onNavigateToInventory: () -> Unit,
+    onNavigateToSales: () -> Unit,
     onLogout: () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -56,6 +56,12 @@ fun HomeScreen(
                     scope.launch {
                         drawerState.close()
                         onNavigateToInventory()
+                    }
+                },
+                onNavigateToSales = {
+                    scope.launch {
+                        drawerState.close()
+                        onNavigateToSales()
                     }
                 },
                 onNavigateToProfile = {
@@ -100,12 +106,13 @@ fun HomeScreen(
                     }
                 )
             }
-        ) { padding ->
+        ) { innerPadding ->
             HomeContent(
-                modifier = Modifier.padding(padding),
+                modifier = Modifier.padding(innerPadding),
                 userName = userName,
                 onNavigateToRecipes = onNavigateToRecipes,
-                onNavigateToInventory = onNavigateToInventory
+                onNavigateToInventory = onNavigateToInventory,
+                onNavigateToSales = onNavigateToSales
             )
         }
     }
@@ -119,6 +126,7 @@ fun DrawerContent(
     onNavigateToHome: () -> Unit,
     onNavigateToRecipes: () -> Unit,
     onNavigateToInventory: () -> Unit,
+    onNavigateToSales: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -177,7 +185,7 @@ fun DrawerContent(
                 }
             }
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Navigation Items
             DrawerMenuItem(
@@ -199,6 +207,12 @@ fun DrawerContent(
             )
 
             DrawerMenuItem(
+                icon = Icons.Outlined.PointOfSale,
+                label = "Sales",
+                onClick = onNavigateToSales
+            )
+
+            DrawerMenuItem(
                 icon = Icons.Default.Person,
                 label = "Profile",
                 onClick = onNavigateToProfile
@@ -206,7 +220,7 @@ fun DrawerContent(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             DrawerMenuItem(
                 icon = Icons.Default.Logout,
@@ -260,7 +274,8 @@ fun HomeContent(
     modifier: Modifier = Modifier,
     userName: String,
     onNavigateToRecipes: () -> Unit,
-    onNavigateToInventory: () -> Unit
+    onNavigateToInventory: () -> Unit,
+    onNavigateToSales: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -310,6 +325,21 @@ fun HomeContent(
                 onClick = onNavigateToInventory,
                 modifier = Modifier.weight(1f)
             )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            QuickActionCard(
+                icon = Icons.Outlined.PointOfSale,
+                title = "Sales",
+                description = "Register sales",
+                onClick = onNavigateToSales,
+                modifier = Modifier.weight(1f)
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
         }
 
         // Statistics Card (Placeholder)

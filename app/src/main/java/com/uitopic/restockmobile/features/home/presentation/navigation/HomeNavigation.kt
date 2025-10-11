@@ -2,12 +2,12 @@ package com.uitopic.restockmobile.features.home.presentation.navigation
 
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.uitopic.restockmobile.features.home.presentation.screens.HomeScreen
+import com.uitopic.restockmobile.features.monitoring.presentation.navigation.MonitoringRoute
 
 sealed class HomeRoute(val route: String) {
-    object Home : HomeRoute("home")
+    data object Home : HomeRoute("home")
 }
 
 fun NavGraphBuilder.homeNavGraph(
@@ -15,7 +15,6 @@ fun NavGraphBuilder.homeNavGraph(
 ) {
     composable(HomeRoute.Home.route) {
         HomeScreen(
-            navController = navController as NavHostController,
             onNavigateToProfile = {
                 navController.navigate("profile_graph")
             },
@@ -25,6 +24,9 @@ fun NavGraphBuilder.homeNavGraph(
             },
             onNavigateToInventory = {
                 navController.navigate("inventory")
+            },
+            onNavigateToSales = {
+                navController.navigate(MonitoringRoute.Sales.route)
             },
             onLogout = {
                 navController.navigate("auth_graph") {

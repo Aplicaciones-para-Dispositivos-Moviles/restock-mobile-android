@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 
+//Supply Detail information
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SupplyDetailScreen(
