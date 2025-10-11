@@ -1,5 +1,6 @@
 package com.uitopic.restockmobile.features.resources.presentation
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,13 +39,22 @@ fun InventoryScreen(
     val customSupplies by viewModel.customSupplies.collectAsState()
     val batches by viewModel.batches.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    val supplies by viewModel.supplies.collectAsState()
 
-    val filteredSupplies = customSupplies.filter {
-        it.supply!!.name.contains(searchQuery, ignoreCase = true)
+    val customSuppliesWithNames = customSupplies.map { custom ->
+        val fullSupply = supplies.find { it.id == custom.supplyId } ?: custom.supply
+        custom.copy(supply = fullSupply)
     }
+
+    val filteredSupplies = customSuppliesWithNames.filter {
+        it.supply?.name?.contains(searchQuery, ignoreCase = true) == true
+    }
+
     val filteredBatches = batches.filter {
         it.customSupply?.supply?.name?.contains(searchQuery, ignoreCase = true) == true
     }
+
+
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
@@ -137,7 +147,8 @@ fun InventoryScreen(
                                 verticalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(custom.supply!!.name, fontWeight = FontWeight.SemiBold)
+                                    Log.d("InventoryScreen", "CustomSupply: $custom, Supply: ${custom.supply}, Name: ${custom.supply?.name}")
+                                    Text(custom.supply?.name ?: "", fontWeight = FontWeight.SemiBold)
                                     Text("S/. ${custom.price}")
                                     Text("Min: ${custom.minStock} / Max: ${custom.maxStock}")
                                 }
