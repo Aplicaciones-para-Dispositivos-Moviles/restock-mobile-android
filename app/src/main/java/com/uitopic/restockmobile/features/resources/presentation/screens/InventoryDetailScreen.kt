@@ -26,7 +26,20 @@ fun InventoryDetailScreen(
     onEdit: (String) -> Unit = {}
 ) {
     val batches by viewModel.batches.collectAsState()
-    val batch = batches.find { it.id == batchId }
+    val customSupplies by viewModel.customSupplies.collectAsState()
+    val supplies by viewModel.supplies.collectAsState()
+
+    // Encuentra el batch
+    val batchRaw = batches.find { it.id == batchId }
+
+    // Mapea batch con CustomSupply y Supply completos
+    val batch = batchRaw?.let { b ->
+        val fullCustomSupply = customSupplies.find { it.id == b.customSupply?.id }
+        val fullSupply = fullCustomSupply?.let { cs ->
+            supplies.find { it.id == cs.supplyId } ?: cs.supply
+        }
+        b.copy(customSupply = fullCustomSupply?.copy(supply = fullSupply))
+    }
 
     val greenColor = Color(0xFF4F8A5B)
     val whiteColor = Color.White

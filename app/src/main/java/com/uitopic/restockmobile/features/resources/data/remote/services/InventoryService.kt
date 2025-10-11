@@ -26,14 +26,14 @@ interface InventoryService {
     suspend fun deleteBatch(@Path("id") id: String): Response<Unit>
 
     @DELETE("custom-supplies/{id}")
-    suspend fun deleteCustomSupply(@Path("id") id: String): Response<Unit>
+    suspend fun deleteCustomSupply(@Path("id") id: Int): Response<Unit>
 
     @POST("custom-supplies")
     suspend fun createCustomSupply(@Body customSupply: CustomSupplyDto): Response<CustomSupplyDto>
 
     @PUT("custom-supplies/{id}")
     suspend fun updateCustomSupply(
-        @Path("id") id: String,
+        @Path("id") id: Int,
         @Body customSupply: CustomSupplyDto
     ): Response<CustomSupplyDto>
 }

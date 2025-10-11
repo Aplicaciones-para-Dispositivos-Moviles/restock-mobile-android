@@ -150,7 +150,7 @@ fun SupplyFormScreen(
                     Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
                     if (selectedSupply != null && minStock.isNotBlank() && maxStock.isNotBlank() && price.isNotBlank()) {
                         val newCustom = CustomSupply(
-                            id = existingSupply?.id ?: "",
+                            id = existingSupply?.id ?: 0,
                             userId = existingSupply?.userId ?: 1,
                             minStock = minStock.toInt(),
                             maxStock = maxStock.toInt(),

@@ -1,7 +1,7 @@
 package com.uitopic.restockmobile.features.resources.domain.models
 
 data class CustomSupply(
-    val id: String,
+    val id: Int,
     val minStock: Int,
     val maxStock: Int,
     val price: Double,

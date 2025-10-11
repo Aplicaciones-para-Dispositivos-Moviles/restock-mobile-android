@@ -14,7 +14,7 @@ interface InventoryRepository {
     suspend fun getCustomSupplies(): List<CustomSupply>
     suspend fun createCustomSupply(custom: CustomSupply): CustomSupply?
     suspend fun updateCustomSupply(custom: CustomSupply): CustomSupply?
-    suspend fun deleteCustomSupply(customSupplyId: String)
+    suspend fun deleteCustomSupply(customSupplyId: Int)
 
     // --- Batches ---
     suspend fun getBatches(): List<Batch>

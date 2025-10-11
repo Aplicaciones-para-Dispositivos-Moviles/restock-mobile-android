@@ -50,12 +50,39 @@ fun InventoryScreen(
         it.supply?.name?.contains(searchQuery, ignoreCase = true) == true
     }
 
-    val filteredBatches = batches.filter {
+    val batchesWithSupplies = batches.map { batch ->
+        // Encuentra el CustomSupply completo usando customSupplyId
+        val fullCustomSupply = customSupplies.find { it.id == batch.customSupply?.id }
+
+        // Encuentra el Supply completo usando supplyId del CustomSupply
+        val fullSupply = fullCustomSupply?.let { cs ->
+            supplies.find { it.id == cs.supplyId } ?: cs.supply
+        }
+
+        batch.copy(
+            customSupply = fullCustomSupply?.copy(supply = fullSupply)
+        )
+    }
+
+// Log para verificar
+    batchesWithSupplies.forEach { batch ->
+        Log.d(
+            "InventoryScreen",
+            "BatchWithSupply: id=${batch.id}, stock=${batch.stock}, customSupplyId=${batch.customSupply?.id}, supplyName=${batch.customSupply?.supply?.name}"
+        )
+    }
+
+    val filteredBatches = batchesWithSupplies.filter {
         it.customSupply?.supply?.name?.contains(searchQuery, ignoreCase = true) == true
     }
 
-
-
+// Log para ver los batches filtrados según búsqueda
+    filteredBatches.forEach { batch ->
+        Log.d(
+            "InventoryScreen",
+            "FilteredBatch: id=${batch.id}, stock=${batch.stock}, customSupplyId=${batch.customSupply?.id}, supplyName=${batch.customSupply?.supply?.name}"
+        )
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         val lifecycle = lifecycleOwner.lifecycle

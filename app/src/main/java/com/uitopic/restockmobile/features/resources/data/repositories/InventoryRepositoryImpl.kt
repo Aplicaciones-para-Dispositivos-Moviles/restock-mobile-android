@@ -83,10 +83,10 @@ class InventoryRepositoryImpl @Inject constructor(
             }
         }
 
-    override suspend fun deleteCustomSupply(customSupplyId: String): Unit =
+    override suspend fun deleteCustomSupply(customSupplyId: Int): Unit =
         withContext(Dispatchers.IO) {
             try {
-                service.deleteCustomSupply(customSupplyId)
+                service.deleteCustomSupply(customSupplyId.toInt())
             } catch (_: Exception) {
                 // Ignorar errores
             }
@@ -104,17 +104,36 @@ class InventoryRepositoryImpl @Inject constructor(
 
     override suspend fun createBatch(batch: Batch): Batch? = withContext(Dispatchers.IO) {
         try {
+            // Creamos el DTO
             val dto = BatchDto(
                 id = null,
                 userId = batch.userId,
-                custom_supply = batch.customSupply?.toDto(batch.userId ?: 0),
+                customSupplyId = batch.customSupply?.id,
                 stock = batch.stock,
-                expiration_date = batch.expirationDate
+                expirationDate = batch.expirationDate
             )
 
+            // Log del DTO enviado
+            Log.d("InventoryRepository", "Enviando createBatch DTO: $dto")
+
+            // Llamada al service
             val resp = service.createBatch(dto)
-            if (resp.isSuccessful) resp.body()?.toDomain() else null
+
+            // Log de la respuesta
+            Log.d("InventoryRepository", "Response code: ${resp.code()}, isSuccessful: ${resp.isSuccessful}")
+            Log.d("InventoryRepository", "Response body: ${resp.body()}")
+
+            // Retorno del body mapeado a domain
+            if (resp.isSuccessful) {
+                val domainBatch = resp.body()?.toDomain()
+                Log.d("InventoryRepository", "Batch creado en domain: $domainBatch")
+                domainBatch
+            } else {
+                Log.e("InventoryRepository", "Error al crear batch: ${resp.errorBody()?.string()}")
+                null
+            }
         } catch (e: Exception) {
+            Log.e("InventoryRepository", "Excepción en createBatch: ${e.message}", e)
             null
         }
     }
@@ -124,9 +143,9 @@ class InventoryRepositoryImpl @Inject constructor(
             val dto = BatchDto(
                 id = batch.id,
                 userId = batch.userId,
-                custom_supply = batch.customSupply?.toDto(batch.userId ?: 0),
+                customSupplyId = batch.customSupply?.id,
                 stock = batch.stock,
-                expiration_date = batch.expirationDate
+                expirationDate = batch.expirationDate
             )
 
             val resp = service.updateBatch(batch.id, dto)
@@ -135,6 +154,7 @@ class InventoryRepositoryImpl @Inject constructor(
             null
         }
     }
+
 
     override suspend fun deleteBatch(batchId: String): Unit = withContext(Dispatchers.IO) {
         try {
