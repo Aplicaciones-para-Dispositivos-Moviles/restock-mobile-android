@@ -37,9 +37,9 @@ fun SupplyFormScreen(
     val isEditing = existingSupply != null
     val greenColor = Color(0xFF4F8A5B)
 
-    LaunchedEffect(existingSupply) {
-        if (existingSupply != null) {
-            selectedSupply = existingSupply.supply
+    LaunchedEffect(existingSupply, supplies) {
+        if (existingSupply != null && supplies.isNotEmpty()) {
+            selectedSupply = supplies.find { it.id == existingSupply.supply!!.id }
             minStock = existingSupply.minStock.toString()
             maxStock = existingSupply.maxStock.toString()
             price = existingSupply.price.toString()
@@ -98,10 +98,20 @@ fun SupplyFormScreen(
                 )
             } else {
                 Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
+                Log.d("SupplyFormScreen", "Base Supply: $existingSupply")
+                // --- Supply selection ---
                 Text(
-                    text = "Base Supply: ${existingSupply.supply}",
+                    text = "Select Base Supply",
                     fontWeight = FontWeight.Medium,
                     fontSize = 16.sp
+                )
+
+                DropdownMenuField(
+                    options = supplies.map { it.name },
+                    selected = selectedSupply?.name,
+                    onSelect = { name ->
+                        selectedSupply = supplies.find { it.name == name }
+                    }
                 )
             }
 
