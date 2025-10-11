@@ -84,16 +84,14 @@ class InventoryRepositoryImpl @Inject constructor(
 
     override suspend fun createCustomSupply(custom: CustomSupply): CustomSupply? = withContext(Dispatchers.IO) {
         val dto = custom.toDto()
-        val resp = (service as? com.uitopic.restockmobile.features.resources.data.remote.services.FakeInventoryService)
-            ?.createCustomSupply(dto)
-        if (resp != null && resp.isSuccessful) resp.body()?.toDomain() else null
+        val resp = service.createCustomSupply(dto)
+        if (resp.isSuccessful) resp.body()?.toDomain() else null
     }
 
     override suspend fun updateCustomSupply(custom: CustomSupply): CustomSupply? = withContext(Dispatchers.IO) {
         val dto = custom.toDto()
-        val resp = (service as? com.uitopic.restockmobile.features.resources.data.remote.services.FakeInventoryService)
-            ?.updateCustomSupply(dto)
-        if (resp != null && resp.isSuccessful) resp.body()?.toDomain() else null
+        val resp = service.updateCustomSupply(custom.id, dto)
+        if (resp.isSuccessful) resp.body()?.toDomain() else null
     }
 
 

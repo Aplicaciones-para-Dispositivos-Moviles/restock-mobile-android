@@ -10,8 +10,17 @@ interface InventoryService {
     @GET("supplies")
     suspend fun getSupplies(): Response<List<SupplyDto>>
 
-    @GET("custom_supplies")
+    @GET("custom-supplies")
     suspend fun getCustomSupplies(): Response<List<CustomSupplyDto>>
+
+    @POST("custom-supplies")
+    suspend fun createCustomSupply(@Body customSupply: CustomSupplyDto): Response<CustomSupplyDto>
+
+    @PUT("custom-supplies/{id}")
+    suspend fun updateCustomSupply(@Path("id") id: String, @Body customSupply: CustomSupplyDto): Response<CustomSupplyDto>
+
+    @DELETE("custom-supplies/{id}")
+    suspend fun deleteCustomSupply(@Path("id") id: String): Response<Unit>
 
     @GET("batches")
     suspend fun getBatches(): Response<List<BatchDto>>
@@ -24,7 +33,4 @@ interface InventoryService {
 
     @DELETE("batches/{id}")
     suspend fun deleteBatch(@Path("id") id: String): Response<Unit>
-
-    @DELETE("custom_supplies/{id}")
-    suspend fun deleteCustomSupply(@Path("id") id: String): Response<Unit>
 }

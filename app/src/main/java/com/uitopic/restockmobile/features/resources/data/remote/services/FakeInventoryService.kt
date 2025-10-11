@@ -59,13 +59,15 @@ class FakeInventoryService : InventoryService {
         batches.removeIf { it._id == id }
         return Response.success(Unit)
     }
-    suspend fun createCustomSupply(custom: CustomSupplyDto): Response<CustomSupplyDto> {
+
+    override suspend fun createCustomSupply(custom: CustomSupplyDto): Response<CustomSupplyDto> {
         val newCustom = custom.copy(_id = "cs${customSupplies.size + 1}")
         customSupplies.add(newCustom)
         return Response.success(newCustom)
     }
-    suspend fun updateCustomSupply(updated: CustomSupplyDto): Response<CustomSupplyDto> {
-        val index = customSupplies.indexOfFirst { it._id == updated._id }
+
+    override suspend fun updateCustomSupply(id: String, updated: CustomSupplyDto): Response<CustomSupplyDto> {
+        val index = customSupplies.indexOfFirst { it._id == id }
         return if (index != -1) {
             customSupplies[index] = updated
             Response.success(updated)
