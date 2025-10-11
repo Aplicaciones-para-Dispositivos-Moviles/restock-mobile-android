@@ -44,6 +44,7 @@ fun RecipeFormScreen(
     var showSupplyDialog by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
 
+
     LaunchedEffect(recipeId) {
         if (recipeId != null) {
             viewModel.loadRecipeForEdit(recipeId)
@@ -75,65 +76,26 @@ fun RecipeFormScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            when (formState.currentStep) {
-                1 -> RecipeInfoStep(
-                    formState = formState,
-                    customSupplies = customSupplies,
-                    onEvent = viewModel::onFormEvent,
-                    onShowSupplyDialog = { showSupplyDialog = true }
-                )
-                2 -> RecipeImageStep(
-                    formState = formState,
-                    onEvent = viewModel::onFormEvent,
-                    onUploadImage = onUploadImage
-                )
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Navigation Buttons
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                if (formState.currentStep > 1) {
-                    OutlinedButton(
-                        onClick = { viewModel.onFormEvent(RecipeFormEvent.PreviousStep) },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.ArrowBack, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Back")
-                    }
-                    Spacer(Modifier.width(16.dp))
-                }
-
-                Button(
-                    onClick = {
-                        if (formState.currentStep < 2) {
-                            viewModel.onFormEvent(RecipeFormEvent.NextStep)
-                        } else {
+            Box(modifier = Modifier.weight(1f)) {
+                when (formState.currentStep) {
+                    1 -> RecipeInfoStep(
+                        formState = formState,
+                        customSupplies = customSupplies,
+                        onEvent = viewModel::onFormEvent,
+                        onShowSupplyDialog = { showSupplyDialog = true },
+                        onNext = { viewModel.onFormEvent(RecipeFormEvent.NextStep) }
+                    )
+                    2 -> RecipeImageStep(
+                        formState = formState,
+                        onEvent = viewModel::onFormEvent,
+                        onUploadImage = onUploadImage,
+                        onBack = { viewModel.onFormEvent(RecipeFormEvent.PreviousStep) },
+                        onSave = {
                             viewModel.onFormEvent(RecipeFormEvent.Submit)
                             onNavigateBack()
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = !formState.isLoading
-                ) {
-                    if (formState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text(if (formState.currentStep < 2) "Next" else "Save Recipe")
-                        if (formState.currentStep < 2) {
-                            Spacer(Modifier.width(8.dp))
-                            Icon(Icons.Default.ArrowForward, null)
-                        }
-                    }
+                        },
+                        isLoading = formState.isLoading
+                    )
                 }
             }
         }
@@ -150,7 +112,7 @@ fun RecipeFormScreen(
                     RecipeFormEvent.AddSupply(
                         RecipeSupplyItem(
                             supplyId = supply.id.toInt(),
-                            supplyName = supply.supply.name,
+                            supplyName = supply.supply?.name ?: "Unknown Supply",
                             quantity = quantity,
                             unit = supply.unit.name
                         )
@@ -206,112 +168,127 @@ fun RecipeInfoStep(
     formState: RecipeFormState,
     customSupplies: List<CustomSupply>,
     onEvent: (RecipeFormEvent) -> Unit,
-    onShowSupplyDialog: () -> Unit
+    onShowSupplyDialog: () -> Unit,
+    onNext: () -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Text(
-                text = "Recipe Information",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        item {
-            OutlinedTextField(
-                value = formState.name,
-                onValueChange = { onEvent(RecipeFormEvent.NameChanged(it)) },
-                label = { Text("Recipe Name*") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-        }
-
-        item {
-            OutlinedTextField(
-                value = formState.description,
-                onValueChange = { onEvent(RecipeFormEvent.DescriptionChanged(it)) },
-                label = { Text("Description*") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                maxLines = 5
-            )
-        }
-
-        item {
-            OutlinedTextField(
-                value = formState.price,
-                onValueChange = { onEvent(RecipeFormEvent.PriceChanged(it)) },
-                label = { Text("Price (S/)*") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                leadingIcon = { Text("S/") }
-            )
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
                 Text(
-                    text = "Supplies*",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "Recipe Information",
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
-
-                Button(
-                    onClick = onShowSupplyDialog,
-                    enabled = customSupplies.isNotEmpty()
-                ) {
-                    Icon(Icons.Default.Add, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Add Supply")
-                }
             }
-        }
 
-        if (customSupplies.isEmpty()) {
             item {
-                Card(
+                OutlinedTextField(
+                    value = formState.name,
+                    onValueChange = { onEvent(RecipeFormEvent.NameChanged(it)) },
+                    label = { Text("Recipe Name*") },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                    singleLine = true
+                )
+            }
+
+            item {
+                OutlinedTextField(
+                    value = formState.description,
+                    onValueChange = { onEvent(RecipeFormEvent.DescriptionChanged(it)) },
+                    label = { Text("Description*") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 5
+                )
+            }
+
+            item {
+                OutlinedTextField(
+                    value = formState.price,
+                    onValueChange = { onEvent(RecipeFormEvent.PriceChanged(it)) },
+                    label = { Text("Price (S/)*") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = { Text("S/") }
+                )
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Text(
+                        text = "Supplies*",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Button(
+                        onClick = onShowSupplyDialog,
+                        enabled = customSupplies.isNotEmpty()
                     ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            "No supplies available. Please create supplies first in the Inventory section.",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Icon(Icons.Default.Add, null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add Supply")
                     }
                 }
             }
+
+            if (customSupplies.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                "No supplies available. Please create supplies first in the Inventory section.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            }
+
+            items(formState.supplies) { supply ->
+                SupplyItemCard(
+                    supply = supply,
+                    onQuantityChange = { newQuantity ->
+                        onEvent(RecipeFormEvent.UpdateSupplyQuantity(supply.supplyId, newQuantity))
+                    },
+                    onRemove = {
+                        onEvent(RecipeFormEvent.RemoveSupply(supply.supplyId))
+                    }
+                )
+            }
         }
 
-        items(formState.supplies) { supply ->
-            SupplyItemCard(
-                supply = supply,
-                onQuantityChange = { newQuantity ->
-                    onEvent(RecipeFormEvent.UpdateSupplyQuantity(supply.supplyId, newQuantity))
-                },
-                onRemove = {
-                    onEvent(RecipeFormEvent.RemoveSupply(supply.supplyId))
-                }
-            )
+        // Next Button
+        Button(
+            onClick = onNext,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text("Next")
+            Spacer(Modifier.width(8.dp))
+            Icon(Icons.Default.ArrowForward, null)
         }
     }
 }
@@ -320,7 +297,10 @@ fun RecipeInfoStep(
 fun RecipeImageStep(
     formState: RecipeFormState,
     onEvent: (RecipeFormEvent) -> Unit,
-    onUploadImage: suspend (Uri) -> String
+    onUploadImage: suspend (Uri) -> String,
+    onBack: () -> Unit,
+    onSave: () -> Unit,
+    isLoading: Boolean
 ) {
     var isUploading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -342,69 +322,105 @@ fun RecipeImageStep(
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
-        Text(
-            text = "Recipe Image",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-
-        if (formState.imageUrl?.isNotBlank() == true) {
-            AsyncImage(
-                model = formState.imageUrl,
-                contentDescription = "Recipe image",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentScale = ContentScale.Crop
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Text(
+                text = "Recipe Image",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
             )
-        } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
+
+            if (formState.imageUrl?.isNotBlank() == true) {
+                AsyncImage(
+                    model = formState.imageUrl,
+                    contentDescription = "Recipe image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.Image,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "No image selected",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Button(
+                onClick = { imagePickerLauncher.launch("image/*") },
+                enabled = !isUploading,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.Image,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                if (isUploading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
-                    Text(
-                        "No image selected",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Uploading...")
+                } else {
+                    Icon(Icons.Default.Upload, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (formState.imageUrl?.isBlank() == true) "Upload Image" else "Change Image")
                 }
             }
         }
 
-        Button(
-            onClick = { imagePickerLauncher.launch("image/*") },
-            enabled = !isUploading,
-            modifier = Modifier.fillMaxWidth()
+        // Navigation Buttons
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (isUploading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+            OutlinedButton(
+                onClick = onBack,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(Icons.Default.ArrowBack, null)
                 Spacer(Modifier.width(8.dp))
-                Text("Uploading...")
-            } else {
-                Icon(Icons.Default.Upload, null)
-                Spacer(Modifier.width(8.dp))
-                Text(if (formState.imageUrl?.isBlank() == true) "Upload Image" else "Change Image")
+                Text("Back")
+            }
+
+            Button(
+                onClick = onSave,
+                modifier = Modifier.weight(1f),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Save")
+                }
             }
         }
     }
@@ -536,7 +552,7 @@ fun SupplySelectionDialog(
                             .filter { it.id.toInt() !in selectedSupplies }
                             .forEach { supply ->
                                 DropdownMenuItem(
-                                    text = { Text("${supply.supply.name} (${supply.unit})") },
+                                    text = { Text("${supply.supply?.name ?: "Unknown Supply"} (${supply.unit.name})") },
                                     onClick = {
                                         selectedSupply = supply
                                         expanded = false

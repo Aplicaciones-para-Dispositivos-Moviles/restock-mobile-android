@@ -58,10 +58,17 @@ fun NavGraphBuilder.planningNavGraph(
             }
             val inventoryViewModel: InventoryViewModel = hiltViewModel(parentEntry)
             val customSupplies by inventoryViewModel.customSupplies.collectAsState()
+            val supplies by inventoryViewModel.supplies.collectAsState()
+
+            // Enrich customSupplies with full supply information
+            val customSuppliesWithNames = customSupplies.map { custom ->
+                val fullSupply = supplies.find { it.id == custom.supplyId } ?: custom.supply
+                custom.copy(supply = fullSupply)
+            }
 
             RecipeFormScreen(
                 recipeId = null,
-                customSupplies = customSupplies,
+                customSupplies = customSuppliesWithNames,
                 onNavigateBack = { navController.navigateUp() },
                 onUploadImage = onUploadImage
             )
@@ -80,10 +87,17 @@ fun NavGraphBuilder.planningNavGraph(
             }
             val inventoryViewModel: InventoryViewModel = hiltViewModel(parentEntry)
             val customSupplies by inventoryViewModel.customSupplies.collectAsState()
+            val supplies by inventoryViewModel.supplies.collectAsState()
+
+            // Enrich customSupplies with full supply information
+            val customSuppliesWithNames = customSupplies.map { custom ->
+                val fullSupply = supplies.find { it.id == custom.supplyId } ?: custom.supply
+                custom.copy(supply = fullSupply)
+            }
 
             RecipeFormScreen(
                 recipeId = recipeId,
-                customSupplies = customSupplies,
+                customSupplies = customSuppliesWithNames,
                 onNavigateBack = { navController.navigateUp() },
                 onUploadImage = onUploadImage
             )

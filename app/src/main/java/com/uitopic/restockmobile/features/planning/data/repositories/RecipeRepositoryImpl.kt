@@ -10,16 +10,49 @@ import com.uitopic.restockmobile.features.planning.domain.models.RecipeSupply
 import com.uitopic.restockmobile.features.planning.domain.models.UpdateRecipeRequest
 import com.uitopic.restockmobile.features.planning.domain.models.UpdateRecipeSupplyRequest
 import com.uitopic.restockmobile.features.planning.domain.repositories.RecipeRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class RecipeRepositoryImpl @Inject constructor(
     private val apiService: RecipeApiService
 ) : RecipeRepository {
+
+    // Reactive cache for recipes
+    private val _recipesCache = MutableStateFlow<List<Recipe>>(emptyList())
+
+    init {
+        // Initial load could be triggered here or lazily
+    }
+
+    // Reactive Flow methods
+    override fun observeAllRecipes(): Flow<List<Recipe>> {
+        return _recipesCache.asStateFlow()
+    }
+
+    override fun observeRecipeById(id: Int): Flow<Recipe?> {
+        return _recipesCache.map { recipes ->
+            recipes.find { it.id == id }
+        }
+    }
+
+    override suspend fun refreshRecipes() {
+        val result = getAllRecipes()
+        result.onSuccess { recipes ->
+            _recipesCache.value = recipes
+        }
+    }
+
     override suspend fun getAllRecipes(): Result<List<Recipe>> {
         return try {
             val response = apiService.getAllRecipes()
             if (response.isSuccessful) {
                 val recipes = response.body()?.map { it.toDomain() } ?: emptyList()
+                _recipesCache.value = recipes // Update cache
                 Result.success(recipes)
             } else {
                 Result.failure(Exception("Error fetching recipes: ${response.code()} ${response.message()}"))
@@ -35,6 +68,8 @@ class RecipeRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val recipe = response.body()?.toDomain()
                 if (recipe != null) {
+                    // Update cache with the latest recipe data
+                    updateRecipeInCache(recipe)
                     Result.success(recipe)
                 } else {
                     Result.failure(Exception("Recipe not found"))
@@ -53,6 +88,8 @@ class RecipeRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val recipe = response.body()?.toDomain()
                 if (recipe != null) {
+                    // Add new recipe to cache
+                    addRecipeToCache(recipe)
                     Result.success(recipe)
                 } else {
                     Result.failure(Exception("Error creating recipe"))
@@ -71,6 +108,8 @@ class RecipeRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val recipe = response.body()?.toDomain()
                 if (recipe != null) {
+                    // Update recipe in cache
+                    updateRecipeInCache(recipe)
                     Result.success(recipe)
                 } else {
                     Result.failure(Exception("Error updating recipe"))
@@ -87,6 +126,8 @@ class RecipeRepositoryImpl @Inject constructor(
         return try {
             val response = apiService.deleteRecipe(id)
             if (response.isSuccessful) {
+                // Remove recipe from cache
+                removeRecipeFromCache(id)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Error deleting recipe: ${response.code()}"))
@@ -117,6 +158,8 @@ class RecipeRepositoryImpl @Inject constructor(
                 supplies.map { it.toDto() }
             )
             if (response.isSuccessful) {
+                // Refresh the specific recipe to get updated supplies
+                getRecipeById(recipeId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Error adding supplies: ${response.code()}"))
@@ -134,6 +177,8 @@ class RecipeRepositoryImpl @Inject constructor(
         return try {
             val response = apiService.updateRecipeSupply(recipeId, supplyId, request.toDto())
             if (response.isSuccessful) {
+                // Refresh the specific recipe to get updated supplies
+                getRecipeById(recipeId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Error updating supply: ${response.code()}"))
@@ -147,6 +192,8 @@ class RecipeRepositoryImpl @Inject constructor(
         return try {
             val response = apiService.removeSupplyFromRecipe(recipeId, supplyId)
             if (response.isSuccessful) {
+                // Refresh the specific recipe to get updated supplies
+                getRecipeById(recipeId)
                 Result.success(Unit)
             } else {
                 Result.failure(Exception("Error removing supply: ${response.code()}"))
@@ -154,5 +201,29 @@ class RecipeRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    // Cache helper methods
+    private fun addRecipeToCache(recipe: Recipe) {
+        val currentRecipes = _recipesCache.value.toMutableList()
+        currentRecipes.add(recipe)
+        _recipesCache.value = currentRecipes
+    }
+
+    private fun updateRecipeInCache(recipe: Recipe) {
+        val currentRecipes = _recipesCache.value.toMutableList()
+        val index = currentRecipes.indexOfFirst { it.id == recipe.id }
+        if (index != -1) {
+            currentRecipes[index] = recipe
+        } else {
+            currentRecipes.add(recipe)
+        }
+        _recipesCache.value = currentRecipes
+    }
+
+    private fun removeRecipeFromCache(recipeId: Int) {
+        val currentRecipes = _recipesCache.value.toMutableList()
+        currentRecipes.removeAll { it.id == recipeId }
+        _recipesCache.value = currentRecipes
     }
 }

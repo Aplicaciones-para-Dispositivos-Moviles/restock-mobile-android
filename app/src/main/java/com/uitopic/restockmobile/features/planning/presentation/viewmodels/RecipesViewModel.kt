@@ -10,9 +10,7 @@ import com.uitopic.restockmobile.features.planning.presentation.states.RecipeFor
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeSupplyItem
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,23 +19,73 @@ class RecipesViewModel @Inject constructor(
     private val repository: RecipeRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<RecipeUiState>(RecipeUiState.Loading)
-    val uiState: StateFlow<RecipeUiState> = _uiState.asStateFlow()
-
-    private val _detailState = MutableStateFlow<RecipeDetailUiState>(RecipeDetailUiState.Loading)
-    val detailState: StateFlow<RecipeDetailUiState> = _detailState.asStateFlow()
-
-    private val _formState = MutableStateFlow(RecipeFormState())
-    val formState: StateFlow<RecipeFormState> = _formState.asStateFlow()
-
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     private val _sortByPriceDesc = MutableStateFlow(false)
     val sortByPriceDesc: StateFlow<Boolean> = _sortByPriceDesc.asStateFlow()
 
-    private var allRecipes: List<Recipe> = emptyList()
+    private val _formState = MutableStateFlow(RecipeFormState())
+    val formState: StateFlow<RecipeFormState> = _formState.asStateFlow()
+
     private var currentRecipeId: Int? = null
+
+    // Reactive UI state that automatically updates when recipes change
+    val uiState: StateFlow<RecipeUiState> = repository.observeAllRecipes()
+        .combine(_searchQuery) { recipes, query -> recipes to query }
+        .combine(_sortByPriceDesc) { (recipes, query), sortDesc ->
+            Triple(recipes, query, sortDesc)
+        }
+        .map { (recipes, query, sortDesc) ->
+            var filtered = recipes
+
+            // Apply search filter
+            if (query.isNotBlank()) {
+                filtered = filtered.filter { it.name.contains(query, ignoreCase = true) }
+            }
+
+            // Apply sort
+            if (sortDesc) {
+                filtered = filtered.sortedByDescending { it.price }
+            }
+
+            RecipeUiState.Success(filtered) as RecipeUiState
+        }
+        .catch { e ->
+            emit(RecipeUiState.Error(e.message ?: "Unknown error") as RecipeUiState)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = RecipeUiState.Loading
+        )
+
+    private val _currentRecipeIdFlow = MutableStateFlow<Int?>(null)
+
+    // Reactive detail state that automatically updates when the recipe changes
+    val detailState: StateFlow<RecipeDetailUiState> = _currentRecipeIdFlow
+        .flatMapLatest { recipeId ->
+            if (recipeId == null) {
+                flowOf(RecipeDetailUiState.Loading as RecipeDetailUiState)
+            } else {
+                repository.observeRecipeById(recipeId)
+                    .map { recipe ->
+                        if (recipe != null) {
+                            RecipeDetailUiState.Success(recipe) as RecipeDetailUiState
+                        } else {
+                            RecipeDetailUiState.Loading as RecipeDetailUiState
+                        }
+                    }
+                    .catch { e ->
+                        emit(RecipeDetailUiState.Error(e.message ?: "Unknown error") as RecipeDetailUiState)
+                    }
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = RecipeDetailUiState.Loading
+        )
 
     init {
         loadRecipes()
@@ -45,61 +93,25 @@ class RecipesViewModel @Inject constructor(
 
     fun loadRecipes() {
         viewModelScope.launch {
-            _uiState.value = RecipeUiState.Loading
-            repository.getAllRecipes()
-                .onSuccess { recipes ->
-                    allRecipes = recipes
-                    applyFilters()
-                }
-                .onFailure { error ->
-                    _uiState.value = RecipeUiState.Error(
-                        error.message ?: "Error loading recipes"
-                    )
-                }
+            repository.refreshRecipes()
         }
     }
 
     fun loadRecipeById(id: Int) {
         viewModelScope.launch {
-            _detailState.value = RecipeDetailUiState.Loading
+            // First, trigger loading from backend to ensure we have latest data
             repository.getRecipeById(id)
-                .onSuccess { recipe ->
-                    _detailState.value = RecipeDetailUiState.Success(recipe)
-                }
-                .onFailure { error ->
-                    _detailState.value = RecipeDetailUiState.Error(
-                        error.message ?: "Error loading recipe"
-                    )
-                }
+            // Then set the ID to trigger reactive flow
+            _currentRecipeIdFlow.value = id
         }
     }
 
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
-        applyFilters()
     }
 
     fun toggleSortByPrice() {
         _sortByPriceDesc.value = !_sortByPriceDesc.value
-        applyFilters()
-    }
-
-    private fun applyFilters() {
-        var filtered = allRecipes
-
-        // Apply search filter
-        if (_searchQuery.value.isNotBlank()) {
-            filtered = filtered.filter { recipe ->
-                recipe.name.contains(_searchQuery.value, ignoreCase = true)
-            }
-        }
-
-        // Apply sort
-        if (_sortByPriceDesc.value) {
-            filtered = filtered.sortedByDescending { it.price }
-        }
-
-        _uiState.value = RecipeUiState.Success(filtered)
     }
 
     fun onFormEvent(event: RecipeFormEvent) {
@@ -213,7 +225,7 @@ class RecipesViewModel @Inject constructor(
                             .onSuccess {
                                 _formState.value = state.copy(isLoading = false)
                                 resetForm()
-                                loadRecipes()
+                                // No need to call loadRecipes() - cache updates automatically
                             }
                             .onFailure { error ->
                                 _formState.value = state.copy(
@@ -241,7 +253,7 @@ class RecipesViewModel @Inject constructor(
                     .onSuccess {
                         _formState.value = state.copy(isLoading = false)
                         resetForm()
-                        loadRecipes()
+                        // No need to call loadRecipes() - cache updates automatically
                     }
                     .onFailure { error ->
                         _formState.value = state.copy(
@@ -280,12 +292,10 @@ class RecipesViewModel @Inject constructor(
         viewModelScope.launch {
             repository.deleteRecipe(recipeId)
                 .onSuccess {
-                    loadRecipes()
+                    // No need to call loadRecipes() - cache updates automatically
                 }
                 .onFailure { error ->
-                    _uiState.value = RecipeUiState.Error(
-                        error.message ?: "Error deleting recipe"
-                    )
+                    // Could emit error to a separate error flow if needed
                 }
         }
     }
