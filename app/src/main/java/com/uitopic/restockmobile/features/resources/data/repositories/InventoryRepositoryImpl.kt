@@ -33,9 +33,21 @@ class InventoryRepositoryImpl @Inject constructor(
     // CUSTOM SUPPLIES
     // ---------------------------------------------------------
     override suspend fun getCustomSupplies(): List<CustomSupply> = withContext(Dispatchers.IO) {
-        val resp = service.getCustomSupplies()
-        if (resp.isSuccessful) {
-            resp.body()?.map { it.toDomain() } ?: emptyList()
+        val customSuppliesResp = service.getCustomSupplies()
+        val suppliesResp = service.getSupplies()
+
+        if (customSuppliesResp.isSuccessful && suppliesResp.isSuccessful) {
+            val customSupplies = customSuppliesResp.body() ?: emptyList()
+            val supplies = suppliesResp.body() ?: emptyList()
+
+            // Create a map for quick lookup
+            val suppliesMap = supplies.associateBy { it.id }
+
+            // Map custom supplies and enrich with supply data
+            customSupplies.map { customDto ->
+                val supplyDto = suppliesMap[customDto.supplyId]
+                customDto.toDomain(supplyDto)
+            }
         } else emptyList()
     }
 

@@ -156,6 +156,7 @@ fun SupplyFormScreen(
                             maxStock = maxStock.toInt(),
                             price = price.toDouble(),
                             supplyId = selectedSupply?.id ?: 0,
+                            supply = selectedSupply,
                             unit = existingSupply?.unit ?: UnitModel("Unit", "u"),
                             currencyCode = "PEN",
                             description = "Insumo por defecto",

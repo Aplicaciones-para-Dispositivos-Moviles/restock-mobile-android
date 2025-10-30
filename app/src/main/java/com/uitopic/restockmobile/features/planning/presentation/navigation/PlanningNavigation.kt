@@ -1,6 +1,5 @@
 package com.uitopic.restockmobile.features.planning.presentation.navigation
 
-import android.net.Uri
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -29,8 +28,7 @@ sealed class PlanningRoute(val route: String) {
 }
 
 fun NavGraphBuilder.planningNavGraph(
-    navController: NavHostController,
-    onUploadImage: suspend (Uri) -> String
+    navController: NavHostController
 ) {
     navigation(
         startDestination = PlanningRoute.RecipesList.route,
@@ -62,8 +60,7 @@ fun NavGraphBuilder.planningNavGraph(
             RecipeFormScreen(
                 recipeId = null,
                 customSupplies = customSupplies,
-                onNavigateBack = { navController.navigateUp() },
-                onUploadImage = onUploadImage
+                onNavigateBack = { navController.navigateUp() }
             )
         }
 
@@ -84,8 +81,7 @@ fun NavGraphBuilder.planningNavGraph(
             RecipeFormScreen(
                 recipeId = recipeId,
                 customSupplies = customSupplies,
-                onNavigateBack = { navController.navigateUp() },
-                onUploadImage = onUploadImage
+                onNavigateBack = { navController.navigateUp() }
             )
         }
 

@@ -1,6 +1,5 @@
 package com.uitopic.restockmobile
 
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -83,12 +82,6 @@ fun RestockApp(tokenManager: TokenManager) {
         // Inventory
         inventoryNavGraph(navController)
         // Planning (Recipes)
-        planningNavGraph(
-            navController = navController,
-            onUploadImage = { uri: Uri ->
-                // TODO: implementar subida real y devolver URL
-                uri.toString()
-            }
-        )
+        planningNavGraph(navController)
     }
 }

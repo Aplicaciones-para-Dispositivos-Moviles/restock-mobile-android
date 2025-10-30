@@ -1,9 +1,17 @@
 package com.uitopic.restockmobile.features.planning.presentation.viewmodels
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.uitopic.restockmobile.features.planning.domain.models.*
-import com.uitopic.restockmobile.features.planning.domain.repositories.RecipeRepository
+import com.uitopic.restockmobile.core.auth.local.TokenManager
+import com.uitopic.restockmobile.core.cloudinary.repositories.ImageUploadRepository
+import com.uitopic.restockmobile.features.planning.data.remote.datasources.RecipeRemoteDataSource
+import com.uitopic.restockmobile.features.planning.data.remote.models.AddSupplyToRecipeDto
+import com.uitopic.restockmobile.features.planning.data.remote.models.CreateRecipeDto
+import com.uitopic.restockmobile.features.planning.data.remote.models.RecipeDto
+import com.uitopic.restockmobile.features.planning.data.remote.models.RecipeSupplyDto
+import com.uitopic.restockmobile.features.planning.data.remote.models.UpdateRecipeDto
+import com.uitopic.restockmobile.features.planning.data.remote.models.UpdateRecipeSupplyDto
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeDetailUiState
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeFormEvent
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeFormState
@@ -18,7 +26,10 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RecipesViewModel @Inject constructor(
-    private val repository: RecipeRepository
+    private val remoteDataSource: RecipeRemoteDataSource,
+    private val imageUploadRepository: ImageUploadRepository,
+    private val tokenManager: TokenManager,
+    private val inventoryRepository: com.uitopic.restockmobile.features.resources.domain.repositories.InventoryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<RecipeUiState>(RecipeUiState.Loading)
@@ -36,17 +47,44 @@ class RecipesViewModel @Inject constructor(
     private val _sortByPriceDesc = MutableStateFlow(false)
     val sortByPriceDesc: StateFlow<Boolean> = _sortByPriceDesc.asStateFlow()
 
-    private var allRecipes: List<Recipe> = emptyList()
+    private var allRecipes: List<RecipeDto> = emptyList()
     private var currentRecipeId: Int? = null
+
+
 
     init {
         loadRecipes()
     }
 
+    fun uploadRecipeImage(imageUri: Uri) {
+        viewModelScope.launch {
+            val currentState = _formState.value
+            _formState.value = currentState.copy(
+                isUploadingImage = true,
+                imageUploadError = null
+            )
+
+            imageUploadRepository.uploadImage(imageUri)
+                .onSuccess { imageUrl ->
+                    _formState.value = _formState.value.copy(
+                        isUploadingImage = false,
+                        imageUrl = imageUrl,
+                        imageUploadError = null
+                    )
+                }
+                .onFailure { error ->
+                    _formState.value = _formState.value.copy(
+                        isUploadingImage = false,
+                        imageUploadError = error.message ?: "Failed to upload image"
+                    )
+                }
+        }
+    }
+
     fun loadRecipes() {
         viewModelScope.launch {
             _uiState.value = RecipeUiState.Loading
-            repository.getAllRecipes()
+            remoteDataSource.getAllRecipes()
                 .onSuccess { recipes ->
                     allRecipes = recipes
                     applyFilters()
@@ -62,9 +100,26 @@ class RecipesViewModel @Inject constructor(
     fun loadRecipeById(id: Int) {
         viewModelScope.launch {
             _detailState.value = RecipeDetailUiState.Loading
-            repository.getRecipeById(id)
+
+            // Fetch custom supplies with enriched data
+            val customSupplies = inventoryRepository.getCustomSupplies()
+            val customSuppliesMap = customSupplies.associateBy { it.id }
+
+            remoteDataSource.getRecipeById(id)
                 .onSuccess { recipe ->
-                    _detailState.value = RecipeDetailUiState.Success(recipe)
+                    val enrichedSupplies = recipe.supplies?.map { recipeSupply ->
+                        val customSupply = customSuppliesMap[recipeSupply.supplyId]
+                        val supply = customSupply?.supply
+
+                        RecipeSupplyItem(
+                            supplyId = recipeSupply.supplyId ?: 0,
+                            supplyName = supply?.name ?: "Unknown Supply",
+                            quantity = recipeSupply.quantity ?: 0.0,
+                            unit = customSupply?.unit?.name ?: ""
+                        )
+                    } ?: emptyList()
+
+                    _detailState.value = RecipeDetailUiState.Success(recipe, enrichedSupplies)
                 }
                 .onFailure { error ->
                     _detailState.value = RecipeDetailUiState.Error(
@@ -90,13 +145,13 @@ class RecipesViewModel @Inject constructor(
         // Apply search filter
         if (_searchQuery.value.isNotBlank()) {
             filtered = filtered.filter { recipe ->
-                recipe.name.contains(_searchQuery.value, ignoreCase = true)
+                recipe.name?.contains(_searchQuery.value, ignoreCase = true) == true
             }
         }
 
         // Apply sort
         if (_sortByPriceDesc.value) {
-            filtered = filtered.sortedByDescending { it.price }
+            filtered = filtered.sortedByDescending { it.price ?: 0.0 }
         }
 
         _uiState.value = RecipeUiState.Success(filtered)
@@ -118,6 +173,7 @@ class RecipesViewModel @Inject constructor(
             }
             is RecipeFormEvent.AddSupply -> {
                 val currentSupplies = _formState.value.supplies
+                // Check if supply is not already added
                 if (!currentSupplies.any { it.supplyId == event.supply.supplyId }) {
                     _formState.value = _formState.value.copy(
                         supplies = currentSupplies + event.supply
@@ -133,7 +189,7 @@ class RecipesViewModel @Inject constructor(
                 // If editing, remove from backend
                 currentRecipeId?.let { recipeId ->
                     viewModelScope.launch {
-                        repository.removeSupplyFromRecipe(recipeId, event.supplyId)
+                        remoteDataSource.removeSupplyFromRecipe(recipeId, event.supplyId)
                     }
                 }
             }
@@ -191,28 +247,30 @@ class RecipesViewModel @Inject constructor(
             val state = _formState.value
             _formState.value = state.copy(isLoading = true, error = null)
 
-            val userId = 1 // TODO: Get from auth
+            val userId = tokenManager.getUserId()
 
             if (currentRecipeId == null) {
                 // Create new recipe
-                val request = CreateRecipeRequest(
+                val request = CreateRecipeDto(
                     name = state.name,
                     description = state.description,
-                    imageUrl = state.imageUrl,
+                    imageUrl = state.imageUrl ?: "",
                     price = state.price.toDouble(),
                     userId = userId
                 )
 
-                repository.createRecipe(request)
+                remoteDataSource.createRecipe(request)
                     .onSuccess { recipe ->
                         // Add supplies to the recipe
                         val supplies = state.supplies.map {
-                            AddSupplyToRecipeRequest(it.supplyId, it.quantity)
+                            AddSupplyToRecipeDto(
+                                supplyId = it.supplyId.toString(),
+                                quantity = it.quantity
+                            )
                         }
-                        repository.addSuppliesToRecipe(recipe.id, supplies)
+                        remoteDataSource.addSuppliesToRecipe(recipe.id ?: 0, supplies)
                             .onSuccess {
-                                _formState.value = state.copy(isLoading = false)
-                                resetForm()
+                                _formState.value = state.copy(isLoading = false, isSuccess = true)
                                 loadRecipes()
                             }
                             .onFailure { error ->
@@ -230,17 +288,51 @@ class RecipesViewModel @Inject constructor(
                     }
             } else {
                 // Update existing recipe
-                val request = UpdateRecipeRequest(
+                val request = UpdateRecipeDto(
                     name = state.name,
                     description = state.description,
-                    imageUrl = state.imageUrl,
+                    imageUrl = state.imageUrl ?: "",
                     price = state.price.toDouble()
                 )
 
-                repository.updateRecipe(currentRecipeId!!, request)
+                remoteDataSource.updateRecipe(currentRecipeId!!, request)
                     .onSuccess {
-                        _formState.value = state.copy(isLoading = false)
-                        resetForm()
+                        // Identify new supplies (not in originalSupplies)
+                        val newSupplies = state.supplies.filter { supply ->
+                            state.originalSupplies.none { it.supplyId == supply.supplyId }
+                        }
+
+                        // Identify supplies that need quantity update
+                        val updatedSupplies = state.supplies.filter { supply ->
+                            val original = state.originalSupplies.find { it.supplyId == supply.supplyId }
+                            original != null && original.quantity != supply.quantity
+                        }
+
+                        // Add new supplies
+                        if (newSupplies.isNotEmpty()) {
+                            val newSuppliesDto = newSupplies.map {
+                                AddSupplyToRecipeDto(
+                                    supplyId = it.supplyId.toString(),
+                                    quantity = it.quantity
+                                )
+                            }
+                            remoteDataSource.addSuppliesToRecipe(currentRecipeId!!, newSuppliesDto)
+                        }
+
+                        // Update quantities for existing supplies
+                        updatedSupplies.forEach { supply ->
+                            val updateDto = UpdateRecipeSupplyDto(
+                                supplyId = supply.supplyId.toString(),
+                                quantity = supply.quantity
+                            )
+                            remoteDataSource.updateRecipeSupply(
+                                currentRecipeId!!,
+                                supply.supplyId,
+                                updateDto
+                            )
+                        }
+
+                        _formState.value = state.copy(isLoading = false, isSuccess = true)
                         loadRecipes()
                     }
                     .onFailure { error ->
@@ -256,21 +348,32 @@ class RecipesViewModel @Inject constructor(
     fun loadRecipeForEdit(recipeId: Int) {
         currentRecipeId = recipeId
         viewModelScope.launch {
-            repository.getRecipeById(recipeId)
+            // Fetch custom supplies with enriched data
+            val customSupplies = inventoryRepository.getCustomSupplies()
+            val customSuppliesMap = customSupplies.associateBy { it.id }
+
+            remoteDataSource.getRecipeById(recipeId)
                 .onSuccess { recipe ->
+                    val supplies = recipe.supplies?.map { recipeSupply ->
+                        // recipeSupply.supplyId es el ID del CustomSupply
+                        val customSupply = customSuppliesMap[recipeSupply.supplyId]
+                        val supply = customSupply?.supply
+
+                        RecipeSupplyItem(
+                            supplyId = recipeSupply.supplyId ?: 0,
+                            supplyName = supply?.name ?: "Unknown Supply",
+                            quantity = recipeSupply.quantity ?: 0.0,
+                            unit = customSupply?.unit?.name ?: ""
+                        )
+                    } ?: emptyList()
+
                     _formState.value = RecipeFormState(
-                        name = recipe.name,
-                        description = recipe.description,
-                        price = recipe.price.toString(),
+                        name = recipe.name ?: "",
+                        description = recipe.description ?: "",
+                        price = recipe.price?.toString() ?: "",
                         imageUrl = recipe.imageUrl,
-                        supplies = recipe.supplies.map {
-                            RecipeSupplyItem(
-                                supplyId = it.supplyId,
-                                supplyName = it.supplyName ?: "",
-                                quantity = it.quantity,
-                                unit = it.unitName ?: ""
-                            )
-                        }
+                        supplies = supplies,
+                        originalSupplies = supplies
                     )
                 }
         }
@@ -278,7 +381,7 @@ class RecipesViewModel @Inject constructor(
 
     fun deleteRecipe(recipeId: Int) {
         viewModelScope.launch {
-            repository.deleteRecipe(recipeId)
+            remoteDataSource.deleteRecipe(recipeId)
                 .onSuccess {
                     loadRecipes()
                 }
