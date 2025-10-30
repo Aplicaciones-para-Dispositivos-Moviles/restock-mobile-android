@@ -50,7 +50,7 @@ fun Batch.toDto(): BatchDto =
 // ---------------------------------------------------------
 // CUSTOM SUPPLY
 // ---------------------------------------------------------
-fun CustomSupplyDto.toDomain(): CustomSupply =
+fun CustomSupplyDto.toDomain(supplyDto: SupplyDto? = null): CustomSupply =
     CustomSupply(
         id = this.id!!.toInt(),
         description = this.description,
@@ -60,14 +60,16 @@ fun CustomSupplyDto.toDomain(): CustomSupply =
         currencyCode = this.currencyCode,
         userId = this.userId,
         supplyId = this.supplyId,
-        supply = Supply(
-            id = this.supplyId,
-            name = "",
-            description = this.description,
-            perishable = false,
-            category = null
-        ),
-        unit = UnitModel(name = "", abbreviation = "")
+        supply = supplyDto?.let {
+            Supply(
+                id = it.id ?: this.supplyId,
+                name = it.name ?: "",
+                description = it.description ?: this.description,
+                perishable = it.perishable ?: false,
+                category = it.category
+            )
+        },
+        unit = UnitModel(name = "Unit", abbreviation = "u")
     )
 
 fun CustomSupply.toDto(userId: Int): CustomSupplyDto =
