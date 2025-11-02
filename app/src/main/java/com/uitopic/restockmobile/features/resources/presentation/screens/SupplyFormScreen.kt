@@ -1,9 +1,9 @@
+// Updated SupplyFormScreen with category + unit select + description editable + price removed
 package com.uitopic.restockmobile.features.resources.presentation.screens
 
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowCircleLeft
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -32,7 +32,18 @@ fun SupplyFormScreen(
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var minStock by remember { mutableStateOf("") }
     var maxStock by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf(existingSupply?.description ?: "") }
+
+    // Category + unit states
+    val categoryOptions = supplies
+        .mapNotNull { it.category }
+        .distinct()
+        .sorted()
+
+    var selectedCategory by remember { mutableStateOf(existingSupply?.supply?.category ?: "") }
+
+    val unitOptions = listOf("Kilogram" to "kg", "Gram" to "g", "Liter" to "L", "Unit" to "u")
+    var selectedUnit by remember { mutableStateOf(unitOptions.first()) }
 
     val isEditing = existingSupply != null
     val greenColor = Color(0xFF4F8A5B)
@@ -42,9 +53,15 @@ fun SupplyFormScreen(
             selectedSupply = supplies.find { it.id == existingSupply.supply!!.id }
             minStock = existingSupply.minStock.toString()
             maxStock = existingSupply.maxStock.toString()
-            price = existingSupply.price.toString()
+            description = existingSupply.description ?: ""
+            selectedCategory = existingSupply.supply?.category ?: ""
         }
     }
+
+    // Filter supplies by category (demo logic: name contains category keyword)
+    val filteredSupplies = if (selectedCategory.isNotEmpty())
+        supplies.filter { it.category == selectedCategory }
+    else supplies
 
     Scaffold(
         containerColor = Color.White,
@@ -80,42 +97,33 @@ fun SupplyFormScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // --- Supply selection ---
-            if (!isEditing) {
-                Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
-                Text(
-                    text = "Select Base Supply",
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp
-                )
+            // Category dropdown
+            Text("Category", fontWeight = FontWeight.Medium, fontSize = 16.sp)
+            DropdownMenuField(
+                options = categoryOptions,
+                selected = selectedCategory,
+                onSelect = {
+                    selectedCategory = it
+                    selectedSupply = null
+                }
+            )
 
-                DropdownMenuField(
-                    options = supplies.map { it.name },
-                    selected = selectedSupply?.name,
-                    onSelect = { name ->
-                        selectedSupply = supplies.find { it.name == name }
-                    }
-                )
-            } else {
-                Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
-                Log.d("SupplyFormScreen", "Base Supply: $existingSupply")
-                // --- Supply selection ---
-                Text(
-                    text = "Select Base Supply",
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp
-                )
+            // Supply dropdown
+            Text("Select Base Supply", fontWeight = FontWeight.Medium, fontSize = 16.sp)
+            DropdownMenuField(
+                options = filteredSupplies.map { it.name },
+                selected = selectedSupply?.name,
+                onSelect = { name -> selectedSupply = filteredSupplies.find { it.name == name } }
+            )
 
-                DropdownMenuField(
-                    options = supplies.map { it.name },
-                    selected = selectedSupply?.name,
-                    onSelect = { name ->
-                        selectedSupply = supplies.find { it.name == name }
-                    }
-                )
-            }
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Description") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium
+            )
 
-            // --- Form fields ---
             OutlinedTextField(
                 value = minStock,
                 onValueChange = { minStock = it },
@@ -134,31 +142,29 @@ fun SupplyFormScreen(
                 shape = MaterialTheme.shapes.medium
             )
 
-            OutlinedTextField(
-                value = price,
-                onValueChange = { price = it },
-                label = { Text("Price") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium
+            // Unit dropdown
+            Text("Unit", fontWeight = FontWeight.Medium, fontSize = 16.sp)
+            DropdownMenuField(
+                options = unitOptions.map { it.first },
+                selected = selectedUnit.first,
+                onSelect = { name -> selectedUnit = unitOptions.first { it.first == name } }
             )
 
             Spacer(Modifier.height(24.dp))
 
             Button(
                 onClick = {
-                    Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
-                    if (selectedSupply != null && minStock.isNotBlank() && maxStock.isNotBlank() && price.isNotBlank()) {
+                    if (selectedSupply != null && minStock.isNotBlank() && maxStock.isNotBlank()) {
                         val newCustom = CustomSupply(
                             id = existingSupply?.id ?: 0,
                             userId = existingSupply?.userId ?: 1,
                             minStock = minStock.toInt(),
                             maxStock = maxStock.toInt(),
-                            price = price.toDouble(),
+                            price = 0.0, // Always send 0
                             supplyId = selectedSupply?.id ?: 0,
-                            unit = existingSupply?.unit ?: UnitModel("Unit", "u"),
+                            unit = UnitModel(selectedUnit.first, selectedUnit.second),
                             currencyCode = "PEN",
-                            description = "Insumo por defecto",
+                            description = description
                         )
 
                         if (isEditing) viewModel.updateCustomSupply(newCustom)
