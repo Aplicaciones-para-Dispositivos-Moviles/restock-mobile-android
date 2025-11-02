@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.PointOfSale
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -58,6 +59,7 @@ fun RestockScaffold(
     onNavigateToRecipes: () -> Unit,
     onNavigateToSales: () -> Unit,
     onNavigateToHome: () -> Unit,
+    onNavigateToOrders: () -> Unit,
     onLogout: () -> Unit,
     content: @Composable (PaddingValues) -> Unit
 ) {
@@ -88,6 +90,9 @@ fun RestockScaffold(
                 },
                 onLogout = {
                     scope.launch { drawerState.close(); onLogout() }
+                },
+                onNavigateToOrders = {
+                    scope.launch { drawerState.close(); onNavigateToOrders() }
                 }
             )
         }
@@ -139,6 +144,7 @@ fun DrawerContent(
     onNavigateToInventory: () -> Unit,
     onNavigateToSales: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onNavigateToOrders: () -> Unit,
     onLogout: () -> Unit
 ) {
     ModalDrawerSheet(
@@ -212,6 +218,12 @@ fun DrawerContent(
                 icon = Icons.Default.Inventory,
                 label = "Inventory",
                 onClick = onNavigateToInventory
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Default.ShoppingCart,
+                label = "Orders",
+                onClick = onNavigateToOrders
             )
 
             DrawerMenuItem(

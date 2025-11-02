@@ -32,6 +32,9 @@ fun NavGraphBuilder.homeNavGraph(
                 navController.navigate("auth_graph") {
                     popUpTo(0) { inclusive = true }
                 }
+            },
+            onNavigateToOrders = {
+                navController.navigate("orders")
             }
         )
     }

@@ -23,7 +23,8 @@ fun HomeScreen(
     onNavigateToInventory: () -> Unit,
     onNavigateToRecipes: () -> Unit,
     onNavigateToSales: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToOrders: () -> Unit
 ) {
     RestockScaffold(
         title = "Restock",
@@ -35,14 +36,16 @@ fun HomeScreen(
         onNavigateToRecipes = onNavigateToRecipes,
         onNavigateToSales = onNavigateToSales,
         onNavigateToHome = {},
-        onLogout = onLogout
+        onLogout = onLogout,
+        onNavigateToOrders = onNavigateToOrders
     ) { innerPadding ->
         HomeContent(
             modifier = Modifier.padding(innerPadding),
             userName = userName,
             onNavigateToRecipes = onNavigateToRecipes,
             onNavigateToInventory = onNavigateToInventory,
-            onNavigateToSales = onNavigateToSales
+            onNavigateToSales = onNavigateToSales,
+            onNavigateToOrders = onNavigateToOrders
         )
     }
 }
@@ -54,7 +57,8 @@ fun HomeContent(
     userName: String,
     onNavigateToRecipes: () -> Unit,
     onNavigateToInventory: () -> Unit,
-    onNavigateToSales: () -> Unit
+    onNavigateToSales: () -> Unit,
+    onNavigateToOrders: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -90,18 +94,18 @@ fun HomeContent(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             QuickActionCard(
-                icon = Icons.Default.Restaurant,
-                title = "Recipes",
-                description = "Manage your recipes",
-                onClick = onNavigateToRecipes,
-                modifier = Modifier.weight(1f)
-            )
-
-            QuickActionCard(
                 icon = Icons.Default.Inventory,
                 title = "Inventory",
                 description = "Track supplies",
                 onClick = onNavigateToInventory,
+                modifier = Modifier.weight(1f)
+            )
+
+            QuickActionCard(
+                icon = Icons.Default.ShoppingCart,
+                title = "Orders",
+                description = "Make orders",
+                onClick = onNavigateToOrders,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -111,6 +115,14 @@ fun HomeContent(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             QuickActionCard(
+                icon = Icons.Default.Restaurant,
+                title = "Recipes",
+                description = "Manage your recipes",
+                onClick = onNavigateToRecipes,
+                modifier = Modifier.weight(1f)
+            )
+
+            QuickActionCard(
                 icon = Icons.Outlined.PointOfSale,
                 title = "Sales",
                 description = "Register sales",
@@ -118,7 +130,7 @@ fun HomeContent(
                 modifier = Modifier.weight(1f)
             )
 
-            Spacer(modifier = Modifier.weight(1f))
+            //Spacer(modifier = Modifier.weight(1f))
         }
 
         // Statistics Card (Placeholder)

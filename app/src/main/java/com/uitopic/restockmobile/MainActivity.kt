@@ -18,6 +18,7 @@ import com.uitopic.restockmobile.features.planning.presentation.navigation.plann
 import com.uitopic.restockmobile.features.profiles.presentation.navigation.profileNavGraph
 import com.uitopic.restockmobile.features.resources.presentation.navigation.inventoryNavGraph
 import com.uitopic.restockmobile.features.monitoring.presentation.navigation.monitoringNavGraph
+import com.uitopic.restockmobile.features.resources.orders.presentation.navigation.ordersNavGraph
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -79,9 +80,12 @@ fun RestockApp(tokenManager: TokenManager) {
                 }
             }
         )
-        // Inventory
+        // Resources - Inventory
         inventoryNavGraph(navController)
         // Planning (Recipes)
         planningNavGraph(navController)
+
+        // Resources - Orders
+        ordersNavGraph(navController)
     }
 }
