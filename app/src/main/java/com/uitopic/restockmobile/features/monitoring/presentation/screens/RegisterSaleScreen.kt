@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -103,7 +104,7 @@ fun RegisterSaleScreen(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             RegisterSaleHeader(
                 onMenuClick = onBack
@@ -114,7 +115,8 @@ fun RegisterSaleScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .background(MaterialTheme.colorScheme.background),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (!isRegistering) {
@@ -235,7 +237,7 @@ private fun RegisterSaleHeader(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.background,
         shadowElevation = 0.dp
     ) {
         Column(
@@ -247,12 +249,12 @@ private fun RegisterSaleHeader(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                PlaceholderAvatar()
-                Spacer(modifier = Modifier.width(12.dp))
-                PlaceholderBrand(modifier = Modifier.weight(1f))
+                //PlaceholderAvatar()
+                //Spacer(modifier = Modifier.width(12.dp))
+                //PlaceholderBrand(modifier = Modifier.weight(1f))
                 IconButton(onClick = onMenuClick) {
                     Icon(
-                        imageVector = Icons.Default.Menu,
+                        imageVector = Icons.Default.ArrowBackIosNew,
                         contentDescription = "Menu"
                     )
                 }
@@ -282,7 +284,7 @@ private fun RegisterSaleHeader(
 private fun PlaceholderAvatar() {
     Surface(
         modifier = Modifier.size(48.dp),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shape = CircleShape,
         tonalElevation = 1.dp,
         shadowElevation = 2.dp
@@ -296,7 +298,7 @@ private fun PlaceholderBrand(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth(0.45f)
                 .height(16.dp),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(50)
         ) {}
         Spacer(modifier = Modifier.height(6.dp))
@@ -304,7 +306,7 @@ private fun PlaceholderBrand(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth(0.3f)
                 .height(12.dp),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(50)
         ) {}
     }
@@ -574,7 +576,7 @@ private fun SupplyRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = MaterialTheme.shapes.medium
             )
             .padding(16.dp)
@@ -832,8 +834,11 @@ private fun SaleActionButtons(
         OutlinedButton(
             onClick = onCancel,
             modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFF6B6B) // Rojo coral
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error
+            ),
+            border = ButtonDefaults.outlinedButtonBorder.copy(
+                brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.error)
             )
         ) {
             Icon(imageVector = Icons.Default.Close, contentDescription = null)

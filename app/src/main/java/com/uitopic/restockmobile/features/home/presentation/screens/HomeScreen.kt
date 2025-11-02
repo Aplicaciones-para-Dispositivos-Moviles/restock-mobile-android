@@ -46,16 +46,16 @@ fun HomeScreen(
                 onNavigateToHome = {
                     scope.launch { drawerState.close() }
                 },
-                onNavigateToRecipes = {
-                    scope.launch {
-                        drawerState.close()
-                        onNavigateToRecipes()
-                    }
-                },
                 onNavigateToInventory = {
                     scope.launch {
                         drawerState.close()
                         onNavigateToInventory()
+                    }
+                },
+                onNavigateToRecipes = {
+                    scope.launch {
+                        drawerState.close()
+                        onNavigateToRecipes()
                     }
                 },
                 onNavigateToSales = {
@@ -80,12 +80,13 @@ fun HomeScreen(
         }
     ) {
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 TopAppBar(
                     title = { Text("Restock") },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, "Menu")
+                            Icon(Icons.Default.Menu, "Menu", tint = MaterialTheme.colorScheme.onSurface)
                         }
                     },
                     actions = {
@@ -100,10 +101,16 @@ fun HomeScreen(
                                     contentScale = ContentScale.Crop
                                 )
                             } else {
-                                Icon(Icons.Default.AccountCircle, "Profile")
+                                Icon(Icons.Default.AccountCircle, "Profile", tint = MaterialTheme.colorScheme.onSurface)
                             }
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                    )
                 )
             }
         ) { innerPadding ->
@@ -130,7 +137,9 @@ fun DrawerContent(
     onNavigateToProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
-    ModalDrawerSheet {
+    ModalDrawerSheet(
+        drawerContainerColor = MaterialTheme.colorScheme.surface
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -158,7 +167,8 @@ fun DrawerContent(
                     Surface(
                         modifier = Modifier.size(64.dp),
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
@@ -185,7 +195,7 @@ fun DrawerContent(
                 }
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(.3f))
 
             // Navigation Items
             DrawerMenuItem(
@@ -195,15 +205,15 @@ fun DrawerContent(
             )
 
             DrawerMenuItem(
-                icon = Icons.Default.Restaurant,
-                label = "Recipes",
-                onClick = onNavigateToRecipes
-            )
-
-            DrawerMenuItem(
                 icon = Icons.Default.Inventory,
                 label = "Inventory",
                 onClick = onNavigateToInventory
+            )
+
+            DrawerMenuItem(
+                icon = Icons.Default.Restaurant,
+                label = "Recipes",
+                onClick = onNavigateToRecipes
             )
 
             DrawerMenuItem(
@@ -220,7 +230,7 @@ fun DrawerContent(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(.3f))
 
             DrawerMenuItem(
                 icon = Icons.Default.Logout,
@@ -257,7 +267,7 @@ fun DrawerMenuItem(
                 imageVector = icon,
                 contentDescription = label,
                 tint = if (isDestructive) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = label,
@@ -345,9 +355,8 @@ fun HomeContent(
         // Statistics Card (Placeholder)
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(
                 modifier = Modifier
@@ -364,19 +373,19 @@ fun HomeContent(
                         text = "Your Business",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Icon(
                         Icons.Default.TrendingUp,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 Text(
                     text = "Start managing your recipes and inventory to see insights here",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -393,9 +402,8 @@ fun QuickActionCard(
 ) {
     Card(
         modifier = modifier.clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(
             modifier = Modifier
@@ -406,7 +414,8 @@ fun QuickActionCard(
         ) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondary,
+                color = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(56.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -427,12 +436,12 @@ fun QuickActionCard(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
         }
