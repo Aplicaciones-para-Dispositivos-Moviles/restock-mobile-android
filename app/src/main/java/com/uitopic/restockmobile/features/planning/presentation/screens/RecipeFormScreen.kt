@@ -34,8 +34,7 @@ fun RecipeFormScreen(
     recipeId: Int? = null,
     customSupplies: List<CustomSupply>,
     viewModel: RecipesViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit,
-    onUploadImage: suspend (Uri) -> String
+    onNavigateBack: () -> Unit
 ) {
     val formState by viewModel.formState.collectAsState()
     val scope = rememberCoroutineScope()
@@ -47,6 +46,14 @@ fun RecipeFormScreen(
     LaunchedEffect(recipeId) {
         if (recipeId != null) {
             viewModel.loadRecipeForEdit(recipeId)
+        }
+    }
+
+    // Navigate back when recipe is successfully saved
+    LaunchedEffect(formState.isSuccess) {
+        if (formState.isSuccess) {
+            viewModel.onFormEvent(RecipeFormEvent.Cancel) // Reset form
+            onNavigateBack()
         }
     }
 
@@ -85,56 +92,8 @@ fun RecipeFormScreen(
                 2 -> RecipeImageStep(
                     formState = formState,
                     onEvent = viewModel::onFormEvent,
-                    onUploadImage = onUploadImage
+                    onUploadImage = viewModel::uploadRecipeImage
                 )
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Navigation Buttons
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                if (formState.currentStep > 1) {
-                    OutlinedButton(
-                        onClick = { viewModel.onFormEvent(RecipeFormEvent.PreviousStep) },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.ArrowBack, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Back")
-                    }
-                    Spacer(Modifier.width(16.dp))
-                }
-
-                Button(
-                    onClick = {
-                        if (formState.currentStep < 2) {
-                            viewModel.onFormEvent(RecipeFormEvent.NextStep)
-                        } else {
-                            viewModel.onFormEvent(RecipeFormEvent.Submit)
-                            onNavigateBack()
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = !formState.isLoading
-                ) {
-                    if (formState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text(if (formState.currentStep < 2) "Next" else "Save Recipe")
-                        if (formState.currentStep < 2) {
-                            Spacer(Modifier.width(8.dp))
-                            Icon(Icons.Default.ArrowForward, null)
-                        }
-                    }
-                }
             }
         }
     }
@@ -150,7 +109,7 @@ fun RecipeFormScreen(
                     RecipeFormEvent.AddSupply(
                         RecipeSupplyItem(
                             supplyId = supply.id.toInt(),
-                            supplyName = supply.supply.name,
+                            supplyName = supply.supply!!.name,
                             quantity = quantity,
                             unit = supply.unit.name
                         )
@@ -313,6 +272,31 @@ fun RecipeInfoStep(
                 }
             )
         }
+
+        item {
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = { onEvent(RecipeFormEvent.NextStep) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = formState.name.isNotBlank() &&
+                         formState.description.isNotBlank() &&
+                         formState.price.isNotBlank() &&
+                         formState.supplies.isNotEmpty()
+            ) {
+                Text("Continue")
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.Default.ArrowForward, null)
+            }
+
+            if (formState.error != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = formState.error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
     }
 }
 
@@ -320,24 +304,13 @@ fun RecipeInfoStep(
 fun RecipeImageStep(
     formState: RecipeFormState,
     onEvent: (RecipeFormEvent) -> Unit,
-    onUploadImage: suspend (Uri) -> String
+    onUploadImage: (Uri) -> Unit
 ) {
-    var isUploading by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
-            scope.launch {
-                isUploading = true
-                try {
-                    val imageUrl = onUploadImage(it)
-                    onEvent(RecipeFormEvent.ImageUrlChanged(imageUrl))
-                } finally {
-                    isUploading = false
-                }
-            }
+            onUploadImage(it)
         }
     }
 
@@ -391,10 +364,10 @@ fun RecipeImageStep(
 
         Button(
             onClick = { imagePickerLauncher.launch("image/*") },
-            enabled = !isUploading,
+            enabled = !formState.isUploadingImage,
             modifier = Modifier.fillMaxWidth()
         ) {
-            if (isUploading) {
+            if (formState.isUploadingImage) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = MaterialTheme.colorScheme.onPrimary
@@ -406,6 +379,65 @@ fun RecipeImageStep(
                 Spacer(Modifier.width(8.dp))
                 Text(if (formState.imageUrl?.isBlank() == true) "Upload Image" else "Change Image")
             }
+        }
+
+        Text(
+            text = "Image is optional. You can skip this step.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(Modifier.weight(1f))
+
+        // Navigation buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = { onEvent(RecipeFormEvent.PreviousStep) },
+                modifier = Modifier.weight(1f),
+                enabled = !formState.isLoading
+            ) {
+                Icon(Icons.Default.ArrowBack, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Back")
+            }
+
+            Button(
+                onClick = { onEvent(RecipeFormEvent.Submit) },
+                modifier = Modifier.weight(1f),
+                enabled = !formState.isLoading && !formState.isUploadingImage
+            ) {
+                if (formState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Saving...")
+                } else {
+                    Icon(Icons.Default.Save, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Save Recipe")
+                }
+            }
+        }
+
+        if (formState.error != null) {
+            Text(
+                text = formState.error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        if (formState.imageUploadError != null) {
+            Text(
+                text = formState.imageUploadError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
@@ -536,7 +568,7 @@ fun SupplySelectionDialog(
                             .filter { it.id.toInt() !in selectedSupplies }
                             .forEach { supply ->
                                 DropdownMenuItem(
-                                    text = { Text("${supply.supply.name} (${supply.unit})") },
+                                    text = { Text("${supply.supply?.name ?: "Unknown"} (${supply.unit.name})") },
                                     onClick = {
                                         selectedSupply = supply
                                         expanded = false

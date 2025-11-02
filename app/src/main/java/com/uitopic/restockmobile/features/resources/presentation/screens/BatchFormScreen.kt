@@ -30,9 +30,12 @@ fun BatchFormScreen(
     var stock by remember { mutableStateOf("") }
     var expirationDate by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
-
+    val supplies by viewModel.supplies.collectAsState()
     val isEditing = existingBatch != null
-
+    val customSuppliesWithNames = customSupplies.map { custom ->
+        val fullSupply = supplies.find { it.id == custom.supplyId } ?: custom.supply
+        custom.copy(supply = fullSupply)
+    }
     LaunchedEffect(existingBatch) {
         if (existingBatch != null) {
             selectedCustom = existingBatch.customSupply
@@ -73,9 +76,11 @@ fun BatchFormScreen(
             if (!isEditing) {
                 Text("Select Custom Supply", fontWeight = FontWeight.SemiBold)
                 DropdownMenuField(
-                    options = customSupplies.map { it.supply.name },
+                    options = customSuppliesWithNames.map { it.supply?.name ?: "No name" },
                     selected = selectedCustom?.supply?.name,
-                    onSelect = { name -> selectedCustom = customSupplies.find { it.supply.name == name } }
+                    onSelect = { name ->
+                        selectedCustom = customSuppliesWithNames.find { it.supply?.name == name }
+                    }
                 )
             } else {
                 Text("Custom Supply: ${existingBatch!!.customSupply?.supply?.name}", fontWeight = FontWeight.SemiBold)
@@ -129,7 +134,7 @@ fun BatchFormScreen(
                     if (selectedCustom != null && stock.isNotBlank()) {
                         val newBatch = Batch(
                             id = existingBatch?.id ?: "",
-                            userId = existingBatch?.userId ?: "demoUser",
+                            userId = existingBatch?.userId ?: 1,
                             customSupply = selectedCustom!!,
                             stock = stock.toInt(),
                             expirationDate = expirationDate.ifBlank { null }

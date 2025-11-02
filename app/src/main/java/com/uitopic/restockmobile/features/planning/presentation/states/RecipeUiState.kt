@@ -1,16 +1,16 @@
 package com.uitopic.restockmobile.features.planning.presentation.states
 
-import com.uitopic.restockmobile.features.planning.domain.models.Recipe
+import com.uitopic.restockmobile.features.planning.data.remote.models.RecipeDto
 
 sealed class RecipeUiState {
     data object Loading : RecipeUiState()
-    data class Success(val recipes: List<Recipe>) : RecipeUiState()
+    data class Success(val recipes: List<RecipeDto>) : RecipeUiState()
     data class Error(val message: String) : RecipeUiState()
 }
 
 sealed class RecipeDetailUiState {
     data object Loading : RecipeDetailUiState()
-    data class Success(val recipe: Recipe) : RecipeDetailUiState()
+    data class Success(val recipe: RecipeDto, val enrichedSupplies: List<RecipeSupplyItem> = emptyList()) : RecipeDetailUiState()
     data class Error(val message: String) : RecipeDetailUiState()
 }
 
@@ -20,9 +20,13 @@ data class RecipeFormState(
     val price: String = "",
     val imageUrl: String? = "",
     val supplies: List<RecipeSupplyItem> = emptyList(),
+    val originalSupplies: List<RecipeSupplyItem> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val currentStep: Int = 1
+    val currentStep: Int = 1,
+    val isSuccess: Boolean = false,
+    val isUploadingImage: Boolean = false,
+    val imageUploadError: String? = null
 )
 
 data class RecipeSupplyItem(

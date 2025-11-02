@@ -1,9 +1,9 @@
 package com.uitopic.restockmobile.features.resources.data.remote.models
 
 data class BatchDto(
-    val _id: String?,
-    val user_id: String?,
-    val custom_supply: CustomSupplyDto?,
+    val id: String?,
+    val userId: Int?,
+    val customSupplyId: Int?,
     val stock: Int?,
-    val expiration_date: String?
+    val expirationDate: String?
 )

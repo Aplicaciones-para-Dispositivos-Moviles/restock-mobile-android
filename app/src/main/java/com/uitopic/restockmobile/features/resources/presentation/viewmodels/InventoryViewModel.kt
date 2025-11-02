@@ -121,7 +121,7 @@ class InventoryViewModel @Inject constructor(
         }
     }
 
-    fun getCustomSupplyById(id: String?): CustomSupply? {
+    fun getCustomSupplyById(id: Int?): CustomSupply? {
         if (id == null) return null
         return _customSupplies.value.find { it.id == id }
     }

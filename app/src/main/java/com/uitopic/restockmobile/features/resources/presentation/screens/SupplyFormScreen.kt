@@ -1,5 +1,6 @@
 package com.uitopic.restockmobile.features.resources.presentation.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -36,9 +37,9 @@ fun SupplyFormScreen(
     val isEditing = existingSupply != null
     val greenColor = Color(0xFF4F8A5B)
 
-    LaunchedEffect(existingSupply) {
-        if (existingSupply != null) {
-            selectedSupply = existingSupply.supply
+    LaunchedEffect(existingSupply, supplies) {
+        if (existingSupply != null && supplies.isNotEmpty()) {
+            selectedSupply = supplies.find { it.id == existingSupply.supply!!.id }
             minStock = existingSupply.minStock.toString()
             maxStock = existingSupply.maxStock.toString()
             price = existingSupply.price.toString()
@@ -81,6 +82,7 @@ fun SupplyFormScreen(
         ) {
             // --- Supply selection ---
             if (!isEditing) {
+                Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
                 Text(
                     text = "Select Base Supply",
                     fontWeight = FontWeight.Medium,
@@ -95,10 +97,21 @@ fun SupplyFormScreen(
                     }
                 )
             } else {
+                Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
+                Log.d("SupplyFormScreen", "Base Supply: $existingSupply")
+                // --- Supply selection ---
                 Text(
-                    text = "Base Supply: ${existingSupply.supply.name}",
+                    text = "Select Base Supply",
                     fontWeight = FontWeight.Medium,
                     fontSize = 16.sp
+                )
+
+                DropdownMenuField(
+                    options = supplies.map { it.name },
+                    selected = selectedSupply?.name,
+                    onSelect = { name ->
+                        selectedSupply = supplies.find { it.name == name }
+                    }
                 )
             }
 
@@ -132,18 +145,21 @@ fun SupplyFormScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // --- Action button ---
             Button(
                 onClick = {
+                    Log.d("SupplyFormScreen", "Selected supply: $selectedSupply")
                     if (selectedSupply != null && minStock.isNotBlank() && maxStock.isNotBlank() && price.isNotBlank()) {
                         val newCustom = CustomSupply(
-                            id = existingSupply?.id ?: "",
-                            userId = existingSupply?.userId ?: "demoUser",
+                            id = existingSupply?.id ?: 0,
+                            userId = existingSupply?.userId ?: 1,
                             minStock = minStock.toInt(),
                             maxStock = maxStock.toInt(),
                             price = price.toDouble(),
-                            supply = selectedSupply!!,
-                            unit = existingSupply?.unit ?: UnitModel("Unit", "u")
+                            supplyId = selectedSupply?.id ?: 0,
+                            supply = selectedSupply,
+                            unit = existingSupply?.unit ?: UnitModel("Unit", "u"),
+                            currencyCode = "PEN",
+                            description = "Insumo por defecto",
                         )
 
                         if (isEditing) viewModel.updateCustomSupply(newCustom)

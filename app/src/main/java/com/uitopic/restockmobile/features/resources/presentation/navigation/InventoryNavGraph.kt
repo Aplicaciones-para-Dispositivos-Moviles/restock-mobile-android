@@ -15,7 +15,7 @@ import com.uitopic.restockmobile.features.resources.presentation.viewmodels.Inve
 
 fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
 
-    // 🟢 Pantalla principal del inventario
+    // Pantalla principal del inventario
     composable("inventory") {
         val viewModel: InventoryViewModel = hiltViewModel()
         InventoryScreen(
@@ -53,7 +53,7 @@ fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
     composable("supply_form/{customSupplyId}") { backStackEntry ->
         val id = backStackEntry.arguments?.getString("customSupplyId")
         val viewModel: InventoryViewModel = hiltViewModel()
-        val existingSupply = viewModel.getCustomSupplyById(id)
+        val existingSupply = viewModel.getCustomSupplyById(id!!.toInt())
 
         SupplyFormScreen(
             viewModel = viewModel,
@@ -66,7 +66,7 @@ fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
     composable("supply_detail/{customSupplyId}") { backStackEntry ->
         val id = backStackEntry.arguments?.getString("customSupplyId") ?: return@composable
         val viewModel: InventoryViewModel = hiltViewModel()
-        val supply = viewModel.getCustomSupplyById(id)
+        val supply = viewModel.getCustomSupplyById(id!!.toInt())
 
         SupplyDetailScreen( // 👁️ Nueva pantalla
             customSupply = supply,
