@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -22,9 +23,15 @@ fun BatchListSection(
     modifier: Modifier = Modifier
 ) {
     val greenColor = Color(0xFF4F8A5B)
+    val redColor = Color(0xFFD9534F)
+    val grayColor = Color(0xFF9E9E9E)
 
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Inventory (Batches)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            "Inventory (Batches)",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
 
         OutlinedTextField(
             value = searchQuery,
@@ -36,24 +43,90 @@ fun BatchListSection(
 
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(batches) { batch ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(4.dp),
+                    elevation = CardDefaults.cardElevation(6.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8))
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(batch.customSupply?.supply?.name ?: "No name", fontWeight = FontWeight.SemiBold)
-                            Text("Stock: ${batch.stock}")
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        // Supply name, perishable badge & details button
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column {
+                                Text(
+                                    text = batch.customSupply?.supply?.name ?: "No name",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (batch.expirationDate == "9999-12-31") {
+                                    Text(
+                                        text = "Non-perishable",
+                                        color = greenColor,
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                } else if (batch.customSupply?.supply?.perishable == true) {
+                                    Text(
+                                        text = "Perishable",
+                                        color = redColor,
+                                        fontWeight = FontWeight.SemiBold,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                            }
+
+                            // Details button moved here
+                            IconButton(onClick = { onBatchClick(batch.id) }) {
+                                Icon(Icons.Default.Search, contentDescription = "Details", tint = greenColor)
+                            }
                         }
-                        IconButton(onClick = { onBatchClick(batch.id) }) {
-                            Icon(Icons.Default.Search, contentDescription = "Details", tint = greenColor)
+
+                        // Stock info
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text("Stock: ${batch.stock}", fontWeight = FontWeight.SemiBold)
+                            batch.customSupply?.let { cs ->
+                                Text("Min: ${cs.minStock}", color = grayColor, style = MaterialTheme.typography.bodySmall)
+                                Text("Max: ${cs.maxStock}", color = grayColor, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+
+                        // Unit
+                        batch.customSupply?.let { cs ->
+                            Text(
+                                "Unit: ${cs.unit.name}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = grayColor
+                            )
+                        }
+
+                        // Category & Expiration
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = batch.customSupply?.supply?.category ?: "-",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = grayColor
+                            )
+                            val expText = if (batch.expirationDate == "9999-12-31") {
+                                "Non-perishable"
+                            } else {
+                                "Expires: ${batch.expirationDate ?: "-"}"
+                            }
+                            Text(
+                                text = expText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (batch.expirationDate == "9999-12-31") greenColor else redColor
+                            )
                         }
                     }
                 }

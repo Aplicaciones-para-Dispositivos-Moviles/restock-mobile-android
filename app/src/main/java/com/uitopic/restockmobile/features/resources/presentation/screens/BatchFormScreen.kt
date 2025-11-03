@@ -107,34 +107,37 @@ fun BatchFormScreen(
                 singleLine = true
             )
 
-            OutlinedTextField(
-                value = expirationDate,
-                onValueChange = { /* disabled manual */ },
-                label = { Text("Expiration Date (optional)") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDatePicker = true },
-                enabled = false,
-                trailingIcon = {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Pick date")
-                }
-            )
 
-            if (showDatePicker) {
-                DatePickerDialog(
-                    onDismissRequest = { showDatePicker = false },
-                    confirmButton = {
-                        TextButton(onClick = { showDatePicker = false }) {
-                            Text("OK", color = greenColor, fontWeight = FontWeight.Bold)
-                        }
+            if (selectedCustom?.supply?.perishable == true) {
+                OutlinedTextField(
+                    value = expirationDate,
+                    onValueChange = { /* disabled manual */ },
+                    label = { Text("Expiration Date") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true },
+                    enabled = false,
+                    trailingIcon = {
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Pick date")
                     }
-                ) {
-                    val datePickerState = rememberDatePickerState()
-                    DatePicker(state = datePickerState)
-                    LaunchedEffect(datePickerState.selectedDateMillis) {
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            val date = java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(millis))
-                            expirationDate = date
+                )
+
+                if (showDatePicker) {
+                    DatePickerDialog(
+                        onDismissRequest = { showDatePicker = false },
+                        confirmButton = {
+                            TextButton(onClick = { showDatePicker = false }) {
+                                Text("OK", color = greenColor, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    ) {
+                        val datePickerState = rememberDatePickerState()
+                        DatePicker(state = datePickerState)
+                        LaunchedEffect(datePickerState.selectedDateMillis) {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                val date = java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(millis))
+                                expirationDate = date
+                            }
                         }
                     }
                 }
@@ -145,12 +148,20 @@ fun BatchFormScreen(
             Button(
                 onClick = {
                     if (selectedCustom != null && stock.isNotBlank()) {
+                        val isPerishable = selectedCustom!!.supply?.perishable == true
+
+                        val finalExpirationDate = if (isPerishable) {
+                            expirationDate.ifBlank { null }
+                        } else {
+                            "9999-12-31"
+                        }
+
                         val newBatch = Batch(
                             id = existingBatch?.id ?: "",
                             userId = existingBatch?.userId ?: 1,
                             customSupply = selectedCustom!!,
                             stock = stock.toDouble(),
-                            expirationDate = expirationDate.ifBlank { null }
+                            expirationDate = finalExpirationDate
                         )
 
                         if (isEditing) viewModel.updateBatch(newBatch)
