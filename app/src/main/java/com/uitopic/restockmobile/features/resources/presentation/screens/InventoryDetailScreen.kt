@@ -26,19 +26,11 @@ fun InventoryDetailScreen(
     onEdit: (String) -> Unit = {}
 ) {
     val batches by viewModel.batches.collectAsState()
-    val customSupplies by viewModel.customSupplies.collectAsState()
-    val supplies by viewModel.supplies.collectAsState()
 
-    // Encuentra el batch
-    val batchRaw = batches.find { it.id == batchId }
+    val batch = batches.find { it.id == batchId }
 
-    // Mapea batch con CustomSupply y Supply completos
-    val batch = batchRaw?.let { b ->
-        val fullCustomSupply = customSupplies.find { it.id == b.customSupply?.id }
-        val fullSupply = fullCustomSupply?.let { cs ->
-            supplies.find { it.id == cs.supplyId } ?: cs.supply
-        }
-        b.copy(customSupply = fullCustomSupply?.copy(supply = fullSupply))
+    LaunchedEffect(batches) {
+        println("🔍 Batch data -> $batches")
     }
 
     val greenColor = Color(0xFF4F8A5B)
@@ -170,7 +162,7 @@ fun BatchDetailContent(batch: Batch, onEdit: () -> Unit, onDelete: () -> Unit, m
             Spacer(Modifier.width(10.dp))
             Button(
                 onClick = onEdit,
-                colors = ButtonDefaults.buttonColors(containerColor = greenColor)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F8A5B))
             ) {
                 Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White)
                 Spacer(Modifier.width(6.dp))

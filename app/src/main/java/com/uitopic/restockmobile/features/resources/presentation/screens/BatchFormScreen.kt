@@ -152,7 +152,7 @@ fun BatchFormScreen(
                             id = existingBatch?.id ?: "",
                             userId = existingBatch?.userId ?: 1,
                             customSupply = selectedCustom!!,
-                            stock = stock.toInt(),
+                            stock = stock.toDouble(),
                             expirationDate = expirationDate.ifBlank { null }
                         )
 

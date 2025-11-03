@@ -6,10 +6,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import com.uitopic.restockmobile.features.resources.presentation.InventoryScreen
+
 import com.uitopic.restockmobile.features.resources.presentation.screens.InventoryDetailScreen
 import com.uitopic.restockmobile.features.resources.presentation.screens.SupplyFormScreen
 import com.uitopic.restockmobile.features.resources.presentation.screens.BatchFormScreen
+import com.uitopic.restockmobile.features.resources.presentation.screens.InventoryScreen
 import com.uitopic.restockmobile.features.resources.presentation.screens.SupplyDetailScreen
 import com.uitopic.restockmobile.features.resources.presentation.viewmodels.InventoryViewModel
 
@@ -21,17 +22,11 @@ fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
         InventoryScreen(
             viewModel = viewModel,
             onAddSupplyClick = { navController.navigate("supply_form") },
-            onEditSupplyClick = { custom ->
-                navController.navigate("supply_form/${custom.id}")
-            },
             onViewSupplyDetails = { custom -> // 👁️ Nuevo callback
                 navController.navigate("supply_detail/${custom.id}")
             },
             onBatchClick = { batchId ->
                 navController.navigate("inventory_detail/$batchId")
-            },
-            onEditBatchClick = { batchId ->
-                navController.navigate("edit_batch/$batchId")
             },
             onAddBatchClick = {
                 navController.navigate("add_batch")

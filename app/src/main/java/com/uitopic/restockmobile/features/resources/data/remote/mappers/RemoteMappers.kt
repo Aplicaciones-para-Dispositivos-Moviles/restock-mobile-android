@@ -20,32 +20,35 @@ fun SupplyDto.toDomain(): Supply =
 
 fun BatchDto.toDomain(customSupplies: List<CustomSupply>? = null): Batch =
     Batch(
-        id = this.id ?: "",
-        userId = this.userId,
-        customSupply = this.customSupplyId?.let { id ->
-            customSupplies?.find { it.id == id } ?: CustomSupply(
-                id = id,
-                minStock = 0,
-                maxStock = 0,
-                price = 0.0,
-                userId = null,
-                supplyId = 0,
-                supply = null,
-                unit = UnitModel("", ""),
-                currencyCode = "",
-                description = ""
-            )
-        },
-        stock = this.stock ?: 0,
-        expirationDate = this.expirationDate
+        id = id ?: "",
+        userId = userId,
+        customSupply =
+            customSupply?.toDomain() // ✅ si backend lo manda
+                ?: customSupplyId?.let { id ->
+                    customSupplies?.find { it.id == id }
+                }
+                ?: CustomSupply(
+                    id = customSupplyId ?: 0,
+                    description = "",
+                    minStock = 0,
+                    maxStock = 0,
+                    price = 0.0,
+                    userId = null,
+                    supplyId = 0,
+                    supply = null,
+                    unit = UnitModel("", ""),
+                    currencyCode = ""
+                ),
+        stock = stock?.toDouble() ?: 0.0,
+        expirationDate = expirationDate
     )
 fun Batch.toDto(): BatchDto =
     BatchDto(
-        id = this.id,
-        userId = this.userId,
-        customSupplyId = this.customSupply?.id, // enviar solo id como Int
-        stock = this.stock,
-        expirationDate = this.expirationDate
+        id = id,
+        userId = userId,
+        customSupplyId = customSupply?.id,
+        stock = stock.toDouble(),
+        expirationDate = expirationDate
     )
 // ---------------------------------------------------------
 // CUSTOM SUPPLY
