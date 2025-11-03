@@ -1,5 +1,6 @@
 package com.uitopic.restockmobile.features.resources.data.di
 
+import com.uitopic.restockmobile.features.resources.data.remote.services.InventoryService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -8,7 +9,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Named
 import javax.inject.Singleton
-import com.uitopic.restockmobile.features.resources.data.remote.services.InventoryService
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -18,16 +20,32 @@ object RemoteModule {
     @Singleton
     @Named("base_url")
     fun provideApiBaseUrl(): String {
-        return "https://restock-platform-production.up.railway.app/api/v1/"
+        return "http://10.0.2.2:8080/api/v1/"
     }
 
     @Provides
     @Singleton
-    fun provideRetrofit(@Named("base_url") url: String): Retrofit {
+    fun provideOkHttpClient(): OkHttpClient {
+        val logging = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY // <-- Log detalla request/response
+        }
+
+        return OkHttpClient.Builder()
+            .addInterceptor(logging)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(
+        @Named("base_url") url: String,
+        client: OkHttpClient
+    ): Retrofit {
         return Retrofit
             .Builder()
             .baseUrl(url)
             .addConverterFactory(GsonConverterFactory.create())
+            .client(client) // <-- Usando cliente con logging
             .build()
     }
 

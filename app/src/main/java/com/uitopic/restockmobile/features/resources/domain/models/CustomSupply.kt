@@ -9,6 +9,6 @@ data class CustomSupply(
     val supplyId: Int,
     val supply: Supply? = null,
     val unit: UnitModel,
-    val currencyCode: String,
+    val currencyCode: String? = null,
     val description: String,
 )

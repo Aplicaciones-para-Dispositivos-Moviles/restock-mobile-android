@@ -1,9 +1,9 @@
 package com.uitopic.restockmobile.features.resources.data.remote.mappers
 
+import CustomSupplyDto
+import CustomSupplyRequestDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.BatchDto
-import com.uitopic.restockmobile.features.resources.data.remote.models.CustomSupplyDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.SupplyDto
-import com.uitopic.restockmobile.features.resources.data.remote.models.UnitDto
 import com.uitopic.restockmobile.features.resources.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.domain.models.Supply
@@ -52,32 +52,27 @@ fun Batch.toDto(): BatchDto =
 // ---------------------------------------------------------
 fun CustomSupplyDto.toDomain(): CustomSupply =
     CustomSupply(
-        id = this.id!!.toInt(),
-        description = this.description,
-        minStock = this.minStock,
-        maxStock = this.maxStock,
-        price = this.price,
-        currencyCode = this.currencyCode,
-        userId = this.userId,
-        supplyId = this.supplyId,
-        supply = Supply(
-            id = this.supplyId,
-            name = "",
-            description = this.description,
-            perishable = false,
-            category = null
-        ),
-        unit = UnitModel(name = "", abbreviation = "")
+        id = id ?: 0,
+        description = description.orEmpty(),
+        minStock = minStock ?: 0,
+        maxStock = maxStock ?: 0,
+        price = price ?: 0.0,
+        userId = userId,
+        supplyId = supply?.id ?: 0,
+        supply = supply?.toDomain(),
+        unit = UnitModel(unitName.orEmpty(), unitAbbreviaton.orEmpty()),
+        currencyCode = currencyCode.orEmpty()
     )
 
-fun CustomSupply.toDto(userId: Int): CustomSupplyDto =
-    CustomSupplyDto(
-        id = this.id,
-        supplyId = this.supplyId,
-        description = this.description,
-        minStock = this.minStock,
-        maxStock = this.maxStock,
-        price = this.price,
-        currencyCode = this.currencyCode,
-        userId = userId
+fun CustomSupply.toRequestDto(userId: Int): CustomSupplyRequestDto =
+    CustomSupplyRequestDto(
+        id = if (id == 0) null else id,
+        supplyId = supplyId,
+        description = description,
+        minStock = minStock,
+        maxStock = maxStock,
+        price = price,
+        userId = this.userId ?: userId,
+        unitName = unit.name,
+        unitAbbreviaton = unit.abbreviation
     )

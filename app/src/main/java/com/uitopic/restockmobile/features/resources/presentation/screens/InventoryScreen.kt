@@ -191,20 +191,7 @@ fun InventoryScreen(
                                             tint = greenColor
                                         )
                                     }
-                                    IconButton(onClick = { onEditSupplyClick(custom) }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Edit,
-                                            contentDescription = "Edit",
-                                            tint = greenColor
-                                        )
-                                    }
-                                    IconButton(onClick = { viewModel.deleteCustomSupply(custom) }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Delete",
-                                            tint = Color.Gray
-                                        )
-                                    }
+
                                 }
                             }
                         }
@@ -253,12 +240,6 @@ fun InventoryScreen(
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     IconButton(onClick = { onBatchClick(batch.id) }) {
                                         Icon(Icons.Default.Search, contentDescription = "Details", tint = greenColor)
-                                    }
-                                    IconButton(onClick = { onEditBatchClick(batch.id) }) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = greenColor)
-                                    }
-                                    IconButton(onClick = { viewModel.deleteBatch(batch.id) }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Gray)
                                     }
                                 }
                             }

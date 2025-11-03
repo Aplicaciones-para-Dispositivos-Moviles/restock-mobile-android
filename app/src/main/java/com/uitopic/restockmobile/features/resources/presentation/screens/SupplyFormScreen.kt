@@ -34,7 +34,6 @@ fun SupplyFormScreen(
     var maxStock by remember { mutableStateOf("") }
     var description by remember { mutableStateOf(existingSupply?.description ?: "") }
 
-    // Category + unit states
     val categoryOptions = supplies
         .mapNotNull { it.category }
         .distinct()
@@ -169,7 +168,7 @@ fun SupplyFormScreen(
 
                         if (isEditing) viewModel.updateCustomSupply(newCustom)
                         else viewModel.addCustomSupply(newCustom)
-
+                        Log.d("SupplyForm", "Unidad seleccionada: ${selectedUnit.first} (${selectedUnit.second})")
                         onBack()
                     }
                 },

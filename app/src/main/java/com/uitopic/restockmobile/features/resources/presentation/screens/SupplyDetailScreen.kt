@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,7 +20,9 @@ import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 @Composable
 fun SupplyDetailScreen(
     customSupply: CustomSupply?,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onEditClick: (CustomSupply) -> Unit,
+    onDeleteClick: (CustomSupply) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -41,14 +45,39 @@ fun SupplyDetailScreen(
                 modifier = Modifier
                     .padding(padding)
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(customSupply.supply!!.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text("Precio: S/. ${customSupply.price}")
                 Text("Stock mínimo: ${customSupply.minStock}")
                 Text("Stock máximo: ${customSupply.maxStock}")
                 Text("Unidad: ${customSupply.unit.name}")
+
+                Spacer(Modifier.height(20.dp))
+
+                // 🔥 Buttons for Edit/Delete HERE
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = { onEditClick(customSupply) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Editar")
+                        Spacer(Modifier.width(6.dp))
+                        Text("Editar")
+                    }
+
+                    OutlinedButton(
+                        onClick = { onDeleteClick(customSupply) },
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                        Spacer(Modifier.width(6.dp))
+                        Text("Eliminar")
+                    }
+                }
             }
         }
     }
+
 }

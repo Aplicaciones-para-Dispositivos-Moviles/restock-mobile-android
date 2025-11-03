@@ -4,8 +4,10 @@ import android.util.Log
 import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.resources.data.remote.mappers.toDomain
 import com.uitopic.restockmobile.features.resources.data.remote.mappers.toDto
+import com.uitopic.restockmobile.features.resources.data.remote.mappers.toRequestDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.BatchDto
 import com.uitopic.restockmobile.features.resources.data.remote.services.InventoryService
+
 import com.uitopic.restockmobile.features.resources.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.domain.models.Supply
@@ -50,7 +52,7 @@ class InventoryRepositoryImpl @Inject constructor(
                     return@withContext null
                 }
 
-                val dto = custom.toDto(userId)
+                val dto = custom.toRequestDto(userId)
                 Log.d("InventoryRepository", "DTO enviado: $dto")
 
                 val response = service.createCustomSupply(dto)
@@ -75,7 +77,7 @@ class InventoryRepositoryImpl @Inject constructor(
             try {
                 val userId = tokenManager.getUserId() ?: return@withContext null
                 val id = custom.id ?: return@withContext null
-                val dto = custom.toDto(userId)
+                val dto = custom.toRequestDto(userId)
                 val response = service.updateCustomSupply(id, dto)
                 if (response.isSuccessful) response.body()?.toDomain() else null
             } catch (e: Exception) {

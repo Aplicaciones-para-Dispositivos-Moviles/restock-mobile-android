@@ -66,24 +66,39 @@ fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
     composable("supply_detail/{customSupplyId}") { backStackEntry ->
         val id = backStackEntry.arguments?.getString("customSupplyId") ?: return@composable
         val viewModel: InventoryViewModel = hiltViewModel()
-        val supply = viewModel.getCustomSupplyById(id!!.toInt())
+        val supply = viewModel.getCustomSupplyById(id.toInt())
 
-        SupplyDetailScreen( // 👁️ Nueva pantalla
+        SupplyDetailScreen(
             customSupply = supply,
-            onBack = { navController.popBackStack() }
+            onBack = { navController.popBackStack() },
+
+            // ✨ Editar desde la pantalla de detalle
+            onEditClick = { custom ->
+                navController.navigate("supply_form/${custom.id}")
+            },
+
+            // ✨ Eliminar desde la pantalla de detalle
+            onDeleteClick = { custom ->
+                viewModel.deleteCustomSupply(custom)
+                navController.popBackStack() // volver tras eliminar
+            }
         )
     }
 
-    // 🟢 Detalle del lote
     composable("inventory_detail/{batchId}") { backStackEntry ->
         val batchId = backStackEntry.arguments?.getString("batchId") ?: return@composable
         val viewModel: InventoryViewModel = hiltViewModel()
+
         InventoryDetailScreen(
             viewModel = viewModel,
             batchId = batchId,
-            onBack = { navController.popBackStack() }
+            onBack = { navController.popBackStack() },
+            onEdit = { id ->
+                navController.navigate("edit_batch/$id")
+            }
         )
     }
+
 
     // 🟢 Agregar lote
     composable("add_batch") {
