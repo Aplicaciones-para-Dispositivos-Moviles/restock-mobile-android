@@ -6,6 +6,7 @@ import com.uitopic.restockmobile.core.network.ApiConstants
 import com.uitopic.restockmobile.core.network.AuthInterceptor
 import com.uitopic.restockmobile.features.planning.data.remote.services.RecipeApiService
 import com.uitopic.restockmobile.features.profiles.data.remote.services.ProfileApiService
+import com.uitopic.restockmobile.features.resources.data.remote.services.InventoryService
 
 import dagger.Module
 import dagger.Provides
@@ -80,5 +81,11 @@ object NetworkModule {
     @Singleton
     fun provideRecipeApiService(@ApiRetrofit retrofit: Retrofit): RecipeApiService {
         return retrofit.create(RecipeApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideInventoryService(@ApiRetrofit retrofit: Retrofit): InventoryService {
+        return retrofit.create(InventoryService::class.java)
     }
 }
