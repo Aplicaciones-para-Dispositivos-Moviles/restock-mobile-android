@@ -41,6 +41,14 @@ class InventoryRepositoryImpl @Inject constructor(
         } else emptyList()
     }
 
+    override suspend fun getCustomSuppliesByUserId(): List<CustomSupply> =
+        withContext(Dispatchers.IO) {
+            val userId = tokenManager.getUserId() ?: return@withContext emptyList()
+            val resp = service.getCustomSuppliesByUserId(userId)
+            if (resp.isSuccessful) {
+                resp.body()?.map { it.toDomain() } ?: emptyList()
+            } else emptyList()
+        }
 
     override suspend fun createCustomSupply(custom: CustomSupply): CustomSupply? =
         withContext(Dispatchers.IO) {
@@ -57,14 +65,20 @@ class InventoryRepositoryImpl @Inject constructor(
                 Log.d("InventoryRepository", "DTO enviado: $dto")
 
                 val response = service.createCustomSupply(dto)
-                Log.d("InventoryRepository", "Response code: ${response.code()} - success: ${response.isSuccessful}")
+                Log.d(
+                    "InventoryRepository",
+                    "Response code: ${response.code()} - success: ${response.isSuccessful}"
+                )
 
                 if (response.isSuccessful) {
                     val body = response.body()
                     Log.d("InventoryRepository", "Respuesta exitosa: $body")
                     body?.toDomain()
                 } else {
-                    Log.e("InventoryRepository", "Error del servidor: ${response.errorBody()?.string()}")
+                    Log.e(
+                        "InventoryRepository",
+                        "Error del servidor: ${response.errorBody()?.string()}"
+                    )
                     null
                 }
             } catch (e: Exception) {
@@ -104,6 +118,14 @@ class InventoryRepositoryImpl @Inject constructor(
         } else emptyList()
     }
 
+    override suspend fun getBatchesByUserId(): List<Batch> = withContext(Dispatchers.IO) {
+        val userId = tokenManager.getUserId() ?: return@withContext emptyList()
+        val resp = service.getBatchesByUserId(userId)
+        if (resp.isSuccessful) {
+            resp.body()?.map { it.toDomain() } ?: emptyList()
+        } else emptyList()
+    }
+
     override suspend fun createBatch(batch: Batch): Batch? = withContext(Dispatchers.IO) {
         try {
             val dto = BatchDto(
@@ -121,7 +143,10 @@ class InventoryRepositoryImpl @Inject constructor(
             val resp = service.createBatch(dto)
 
             // Log de la respuesta
-            Log.d("InventoryRepository", "Response code: ${resp.code()}, isSuccessful: ${resp.isSuccessful}")
+            Log.d(
+                "InventoryRepository",
+                "Response code: ${resp.code()}, isSuccessful: ${resp.isSuccessful}"
+            )
             Log.d("InventoryRepository", "Response body: ${resp.body()}")
 
             // Retorno del body mapeado a domain

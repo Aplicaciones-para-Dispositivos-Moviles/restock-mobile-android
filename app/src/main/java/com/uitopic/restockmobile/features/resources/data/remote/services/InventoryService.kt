@@ -6,6 +6,7 @@ import com.uitopic.restockmobile.features.resources.data.remote.models.BatchDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.SupplyDto
 import retrofit2.Response
 import retrofit2.http.*
+import kotlin.Int
 
 interface InventoryService {
     @GET("supplies")
@@ -13,6 +14,12 @@ interface InventoryService {
 
     @GET("custom-supplies")
     suspend fun getCustomSupplies(): Response<List<CustomSupplyDto>>
+
+    @GET("custom-supplies/user/{userId}")
+    suspend fun getCustomSuppliesByUserId(@Path("userId") userId: Int): Response<List<CustomSupplyDto>>
+
+    @GET("batches/user/{userId}")
+    suspend fun getBatchesByUserId(@Path("userId" ) userId: Int): Response<List<BatchDto>>
 
     @GET("batches")
     suspend fun getBatches(): Response<List<BatchDto>>
