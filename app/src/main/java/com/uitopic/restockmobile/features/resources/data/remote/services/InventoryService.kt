@@ -1,7 +1,8 @@
 package com.uitopic.restockmobile.features.resources.data.remote.services
 
+import CustomSupplyDto
+import CustomSupplyRequestDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.BatchDto
-import com.uitopic.restockmobile.features.resources.data.remote.models.CustomSupplyDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.SupplyDto
 import retrofit2.Response
 import retrofit2.http.*
@@ -29,11 +30,11 @@ interface InventoryService {
     suspend fun deleteCustomSupply(@Path("id") id: Int): Response<Unit>
 
     @POST("custom-supplies")
-    suspend fun createCustomSupply(@Body customSupply: CustomSupplyDto): Response<CustomSupplyDto>
+    suspend fun createCustomSupply(@Body customSupply: CustomSupplyRequestDto): Response<CustomSupplyDto>
 
     @PUT("custom-supplies/{id}")
     suspend fun updateCustomSupply(
         @Path("id") id: Int,
-        @Body customSupply: CustomSupplyDto
+        @Body customSupply: CustomSupplyRequestDto
     ): Response<CustomSupplyDto>
 }

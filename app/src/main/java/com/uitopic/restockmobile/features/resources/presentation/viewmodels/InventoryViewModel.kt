@@ -49,7 +49,6 @@ class InventoryViewModel @Inject constructor(
                 repository.createBatch(batch)
                 _batches.value = repository.getBatches()
             } catch (t: Throwable) {
-                // Fallback local si no hay backend
                 _batches.value = _batches.value + batch
             }
         }
@@ -61,7 +60,6 @@ class InventoryViewModel @Inject constructor(
                 repository.updateBatch(updated)
                 _batches.value = repository.getBatches()
             } catch (t: Throwable) {
-                // Fallback local en modo desarrollo
                 _batches.value = _batches.value.map {
                     if (it.id == updated.id) updated else it
                 }

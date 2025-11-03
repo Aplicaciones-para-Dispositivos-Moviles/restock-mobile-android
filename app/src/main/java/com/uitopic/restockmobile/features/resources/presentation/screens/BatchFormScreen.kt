@@ -1,5 +1,6 @@
 package com.uitopic.restockmobile.features.resources.presentation.screens
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -25,17 +26,29 @@ fun BatchFormScreen(
     onBack: () -> Unit
 ) {
     val customSupplies by viewModel.customSupplies.collectAsState()
-
+    LaunchedEffect(customSupplies) {
+        Log.d("BatchForm", "🔥 customSupplies loaded: ${customSupplies.size}")
+        customSupplies.forEach { cs ->
+            Log.d(
+                "BatchForm", """
+            ➡️ CustomSupply:
+                id = ${cs.id}
+                supplyId = ${cs.supplyId}
+                supplyName = ${cs.supply?.name}
+                unitName = ${cs.unit?.name}
+                unitAbbr = ${cs.unit?.abbreviation}
+                desc = ${cs.description}
+        """.trimIndent()
+            )
+        }
+    }
     var selectedCustom by remember { mutableStateOf<CustomSupply?>(null) }
     var stock by remember { mutableStateOf("") }
     var expirationDate by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
     val supplies by viewModel.supplies.collectAsState()
     val isEditing = existingBatch != null
-    val customSuppliesWithNames = customSupplies.map { custom ->
-        val fullSupply = supplies.find { it.id == custom.supplyId } ?: custom.supply
-        custom.copy(supply = fullSupply)
-    }
+
     LaunchedEffect(existingBatch) {
         if (existingBatch != null) {
             selectedCustom = existingBatch.customSupply
@@ -76,10 +89,10 @@ fun BatchFormScreen(
             if (!isEditing) {
                 Text("Select Custom Supply", fontWeight = FontWeight.SemiBold)
                 DropdownMenuField(
-                    options = customSuppliesWithNames.map { it.supply?.name ?: "No name" },
+                    options = customSupplies.map { it.supply?.name ?: "No name" },
                     selected = selectedCustom?.supply?.name,
                     onSelect = { name ->
-                        selectedCustom = customSuppliesWithNames.find { it.supply?.name == name }
+                        selectedCustom = customSupplies.find { it.supply?.name == name }
                     }
                 )
             } else {
@@ -136,7 +149,7 @@ fun BatchFormScreen(
                             id = existingBatch?.id ?: "",
                             userId = existingBatch?.userId ?: 1,
                             customSupply = selectedCustom!!,
-                            stock = stock.toInt(),
+                            stock = stock.toDouble(),
                             expirationDate = expirationDate.ifBlank { null }
                         )
 
