@@ -90,7 +90,6 @@ class InventoryRepositoryImpl @Inject constructor(
             try {
                 service.deleteCustomSupply(customSupplyId.toInt())
             } catch (_: Exception) {
-                // Ignorar errores
             }
         }
 
@@ -106,7 +105,6 @@ class InventoryRepositoryImpl @Inject constructor(
 
     override suspend fun createBatch(batch: Batch): Batch? = withContext(Dispatchers.IO) {
         try {
-            // Creamos el DTO
             val dto = BatchDto(
                 id = null,
                 userId = batch.userId,

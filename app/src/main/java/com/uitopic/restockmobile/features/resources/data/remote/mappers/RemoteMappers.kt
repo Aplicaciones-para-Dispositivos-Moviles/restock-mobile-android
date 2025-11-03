@@ -23,7 +23,7 @@ fun BatchDto.toDomain(customSupplies: List<CustomSupply>? = null): Batch =
         id = id ?: "",
         userId = userId,
         customSupply =
-            customSupply?.toDomain() // ✅ si backend lo manda
+            customSupply?.toDomain()
                 ?: customSupplyId?.let { id ->
                     customSupplies?.find { it.id == id }
                 }

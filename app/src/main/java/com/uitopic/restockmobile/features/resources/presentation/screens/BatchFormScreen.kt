@@ -48,10 +48,7 @@ fun BatchFormScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     val supplies by viewModel.supplies.collectAsState()
     val isEditing = existingBatch != null
-    val customSuppliesWithNames = customSupplies.map { custom ->
-        val fullSupply = supplies.find { it.id == custom.supplyId } ?: custom.supply
-        custom.copy(supply = fullSupply)
-    }
+
     LaunchedEffect(existingBatch) {
         if (existingBatch != null) {
             selectedCustom = existingBatch.customSupply

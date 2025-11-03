@@ -27,7 +27,7 @@ object RemoteModule {
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY // <-- Log detalla request/response
+            level = HttpLoggingInterceptor.Level.BODY
         }
 
         return OkHttpClient.Builder()
@@ -45,7 +45,7 @@ object RemoteModule {
             .Builder()
             .baseUrl(url)
             .addConverterFactory(GsonConverterFactory.create())
-            .client(client) // <-- Usando cliente con logging
+            .client(client)
             .build()
     }
 
