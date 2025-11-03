@@ -13,6 +13,7 @@ fun AuthResponseDto.toDomain(): User {
         username = username,
         roleId = roleId,
         token = token
+        //AGREGAR PROFILE
     )
 }
 

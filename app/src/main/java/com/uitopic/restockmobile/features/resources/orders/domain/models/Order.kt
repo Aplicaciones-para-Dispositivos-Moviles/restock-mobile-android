@@ -1,9 +1,12 @@
 package com.uitopic.restockmobile.features.resources.orders.domain.models
 
+import com.uitopic.restockmobile.features.auth.domain.models.User
+
 
 data class Order(
     val adminRestaurantId: Int,
     val supplierId: Int,
+    val supplier: User,
     val requestedDate: String = "",
     val partiallyAccepted: Boolean = false,
     val requestedProductsCount: Int = 0,
