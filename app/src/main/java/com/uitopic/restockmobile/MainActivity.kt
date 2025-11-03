@@ -86,6 +86,6 @@ fun RestockApp(tokenManager: TokenManager) {
         planningNavGraph(navController)
 
         // Resources - Orders
-        ordersNavGraph(navController)
+        ordersNavGraph(navController, 1)
     }
 }
