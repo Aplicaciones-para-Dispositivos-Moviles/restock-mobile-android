@@ -35,8 +35,8 @@ class InventoryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _supplies.value = repository.getSupplies()
-                _customSupplies.value = repository.getCustomSupplies()
-                _batches.value = repository.getBatches()
+                _customSupplies.value = repository.getCustomSuppliesByUserId()
+                _batches.value = repository.getBatchesByUserId()
             } catch (t: Throwable) {
                 // TODO: manejar error (mostrar snackbar o log)
             }
