@@ -1,6 +1,5 @@
 package com.uitopic.restockmobile.features.resources.presentation.screens
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -26,22 +25,7 @@ fun BatchFormScreen(
     onBack: () -> Unit
 ) {
     val customSupplies by viewModel.customSupplies.collectAsState()
-    LaunchedEffect(customSupplies) {
-        Log.d("BatchForm", "🔥 customSupplies loaded: ${customSupplies.size}")
-        customSupplies.forEach { cs ->
-            Log.d(
-                "BatchForm", """
-            ➡️ CustomSupply:
-                id = ${cs.id}
-                supplyId = ${cs.supplyId}
-                supplyName = ${cs.supply?.name}
-                unitName = ${cs.unit?.name}
-                unitAbbr = ${cs.unit?.abbreviation}
-                desc = ${cs.description}
-        """.trimIndent()
-            )
-        }
-    }
+
     var selectedCustom by remember { mutableStateOf<CustomSupply?>(null) }
     var stock by remember { mutableStateOf("") }
     var expirationDate by remember { mutableStateOf("") }

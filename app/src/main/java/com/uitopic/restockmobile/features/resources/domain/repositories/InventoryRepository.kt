@@ -10,7 +10,7 @@ interface InventoryRepository {
     // --- Supplies ---
     suspend fun getSupplies(): List<Supply>
 
-    // --- Custom Supplies ---
+    //Custom Supplies
     suspend fun getCustomSupplies(): List<CustomSupply>
 
     suspend fun getCustomSuppliesByUserId(): List<CustomSupply>
@@ -18,7 +18,7 @@ interface InventoryRepository {
     suspend fun updateCustomSupply(custom: CustomSupply): CustomSupply?
     suspend fun deleteCustomSupply(customSupplyId: Int)
 
-    // --- Batches ---
+    //Batches
     suspend fun getBatches(): List<Batch>
 
     suspend fun getBatchesByUserId(): List<Batch>

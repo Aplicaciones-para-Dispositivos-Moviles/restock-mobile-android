@@ -1,8 +1,9 @@
-// Updated SupplyFormScreen with category + unit select + description editable + price removed
 package com.uitopic.restockmobile.features.resources.presentation.screens
 
 import android.util.Log
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowCircleLeft
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -57,7 +58,6 @@ fun SupplyFormScreen(
         }
     }
 
-    // Filter supplies by category (demo logic: name contains category keyword)
     val filteredSupplies = if (selectedCategory.isNotEmpty())
         supplies.filter { it.category == selectedCategory }
     else supplies
@@ -93,10 +93,10 @@ fun SupplyFormScreen(
             modifier = Modifier
                 .padding(padding)
                 .padding(horizontal = 20.dp, vertical = 16.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // Category dropdown
             Text("Category", fontWeight = FontWeight.Medium, fontSize = 16.sp)
             DropdownMenuField(
                 options = categoryOptions,
@@ -107,7 +107,6 @@ fun SupplyFormScreen(
                 }
             )
 
-            // Supply dropdown
             Text("Select Base Supply", fontWeight = FontWeight.Medium, fontSize = 16.sp)
             DropdownMenuField(
                 options = filteredSupplies.map { it.name },
@@ -141,7 +140,6 @@ fun SupplyFormScreen(
                 shape = MaterialTheme.shapes.medium
             )
 
-            // Unit dropdown
             Text("Unit", fontWeight = FontWeight.Medium, fontSize = 16.sp)
             DropdownMenuField(
                 options = unitOptions.map { it.first },
