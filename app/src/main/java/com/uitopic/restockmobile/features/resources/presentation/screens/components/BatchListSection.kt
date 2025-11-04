@@ -52,7 +52,6 @@ fun BatchListSection(
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8))
                 ) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        // Supply name, perishable badge & details button
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -81,13 +80,11 @@ fun BatchListSection(
                                 }
                             }
 
-                            // Details button moved here
                             IconButton(onClick = { onBatchClick(batch.id) }) {
                                 Icon(Icons.Default.Search, contentDescription = "Details", tint = greenColor)
                             }
                         }
 
-                        // Stock info
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -98,7 +95,6 @@ fun BatchListSection(
                             }
                         }
 
-                        // Unit
                         batch.customSupply?.let { cs ->
                             Text(
                                 "Unit: ${cs.unit.name}",
@@ -107,7 +103,6 @@ fun BatchListSection(
                             )
                         }
 
-                        // Category & Expiration
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier = Modifier.fillMaxWidth()

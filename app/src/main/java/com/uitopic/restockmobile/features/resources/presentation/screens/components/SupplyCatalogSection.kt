@@ -79,13 +79,11 @@ private fun SupplyCard(custom: CustomSupply, onViewSupplyDetails: (CustomSupply)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
 
-                // Nombre
                 Text(
                     text = custom.supply?.name ?: "Unnamed",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
 
-                // Unidad + Categoría
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     AssistChip(
                         onClick = {},
@@ -108,7 +106,6 @@ private fun SupplyCard(custom: CustomSupply, onViewSupplyDetails: (CustomSupply)
                     )
                 }
 
-                // Stock
                 Text(
                     text = "Stock: ${custom.minStock} ~ ${custom.maxStock}",
                     style = MaterialTheme.typography.bodySmall,

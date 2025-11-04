@@ -3,7 +3,6 @@ package com.uitopic.restockmobile.features.resources.data.repositories
 import android.util.Log
 import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.resources.data.remote.mappers.toDomain
-import com.uitopic.restockmobile.features.resources.data.remote.mappers.toDto
 import com.uitopic.restockmobile.features.resources.data.remote.mappers.toRequestDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.BatchDto
 import com.uitopic.restockmobile.features.resources.data.remote.services.InventoryService
@@ -136,20 +135,10 @@ class InventoryRepositoryImpl @Inject constructor(
                 expirationDate = batch.expirationDate
             )
 
-            // Log del DTO enviado
-            Log.d("InventoryRepository", "Enviando createBatch DTO: $dto")
 
-            // Llamada al service
             val resp = service.createBatch(dto)
 
-            // Log de la respuesta
-            Log.d(
-                "InventoryRepository",
-                "Response code: ${resp.code()}, isSuccessful: ${resp.isSuccessful}"
-            )
-            Log.d("InventoryRepository", "Response body: ${resp.body()}")
 
-            // Retorno del body mapeado a domain
             if (resp.isSuccessful) {
                 val domainBatch = resp.body()?.toDomain()
                 Log.d("InventoryRepository", "Batch creado en domain: $domainBatch")
@@ -159,7 +148,7 @@ class InventoryRepositoryImpl @Inject constructor(
                 null
             }
         } catch (e: Exception) {
-            Log.e("InventoryRepository", "Excepción en createBatch: ${e.message}", e)
+
             null
         }
     }
