@@ -6,32 +6,26 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import com.uitopic.restockmobile.features.resources.presentation.InventoryScreen
+
 import com.uitopic.restockmobile.features.resources.presentation.screens.InventoryDetailScreen
 import com.uitopic.restockmobile.features.resources.presentation.screens.SupplyFormScreen
 import com.uitopic.restockmobile.features.resources.presentation.screens.BatchFormScreen
+import com.uitopic.restockmobile.features.resources.presentation.screens.InventoryScreen
 import com.uitopic.restockmobile.features.resources.presentation.screens.SupplyDetailScreen
 import com.uitopic.restockmobile.features.resources.presentation.viewmodels.InventoryViewModel
 
 fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
 
-    // Pantalla principal del inventario
     composable("inventory") {
         val viewModel: InventoryViewModel = hiltViewModel()
         InventoryScreen(
             viewModel = viewModel,
             onAddSupplyClick = { navController.navigate("supply_form") },
-            onEditSupplyClick = { custom ->
-                navController.navigate("supply_form/${custom.id}")
-            },
             onViewSupplyDetails = { custom -> // 👁️ Nuevo callback
                 navController.navigate("supply_detail/${custom.id}")
             },
             onBatchClick = { batchId ->
                 navController.navigate("inventory_detail/$batchId")
-            },
-            onEditBatchClick = { batchId ->
-                navController.navigate("edit_batch/$batchId")
             },
             onAddBatchClick = {
                 navController.navigate("add_batch")
@@ -39,7 +33,6 @@ fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
         )
     }
 
-    // 🟢 Crear insumo
     composable("supply_form") {
         val viewModel: InventoryViewModel = hiltViewModel()
         SupplyFormScreen(
@@ -49,7 +42,6 @@ fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
         )
     }
 
-    // 🟢 Editar insumo
     composable("supply_form/{customSupplyId}") { backStackEntry ->
         val id = backStackEntry.arguments?.getString("customSupplyId")
         val viewModel: InventoryViewModel = hiltViewModel()
@@ -62,30 +54,41 @@ fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
         )
     }
 
-    // 🟢 Detalle del insumo (nuevo)
     composable("supply_detail/{customSupplyId}") { backStackEntry ->
         val id = backStackEntry.arguments?.getString("customSupplyId") ?: return@composable
         val viewModel: InventoryViewModel = hiltViewModel()
-        val supply = viewModel.getCustomSupplyById(id!!.toInt())
+        val supply = viewModel.getCustomSupplyById(id.toInt())
 
-        SupplyDetailScreen( // 👁️ Nueva pantalla
+        SupplyDetailScreen(
             customSupply = supply,
-            onBack = { navController.popBackStack() }
+            onBack = { navController.popBackStack() },
+
+            onEditClick = { custom ->
+                navController.navigate("supply_form/${custom.id}")
+            },
+
+            onDeleteClick = { custom ->
+                viewModel.deleteCustomSupply(custom)
+                navController.popBackStack()
+            }
         )
     }
 
-    // 🟢 Detalle del lote
     composable("inventory_detail/{batchId}") { backStackEntry ->
         val batchId = backStackEntry.arguments?.getString("batchId") ?: return@composable
         val viewModel: InventoryViewModel = hiltViewModel()
+
         InventoryDetailScreen(
             viewModel = viewModel,
             batchId = batchId,
-            onBack = { navController.popBackStack() }
+            onBack = { navController.popBackStack() },
+            onEdit = { id ->
+                navController.navigate("edit_batch/$id")
+            }
         )
     }
 
-    // 🟢 Agregar lote
+
     composable("add_batch") {
         val viewModel: InventoryViewModel = hiltViewModel()
         BatchFormScreen(
@@ -95,7 +98,6 @@ fun NavGraphBuilder.inventoryNavGraph(navController: NavController) {
         )
     }
 
-    // 🟢 Editar lote
     composable("edit_batch/{batchId}") { backStackEntry ->
         val batchId = backStackEntry.arguments?.getString("batchId") ?: return@composable
         val viewModel: InventoryViewModel = hiltViewModel()

@@ -32,10 +32,7 @@ fun BatchFormScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     val supplies by viewModel.supplies.collectAsState()
     val isEditing = existingBatch != null
-    val customSuppliesWithNames = customSupplies.map { custom ->
-        val fullSupply = supplies.find { it.id == custom.supplyId } ?: custom.supply
-        custom.copy(supply = fullSupply)
-    }
+
     LaunchedEffect(existingBatch) {
         if (existingBatch != null) {
             selectedCustom = existingBatch.customSupply
@@ -76,10 +73,10 @@ fun BatchFormScreen(
             if (!isEditing) {
                 Text("Select Custom Supply", fontWeight = FontWeight.SemiBold)
                 DropdownMenuField(
-                    options = customSuppliesWithNames.map { it.supply?.name ?: "No name" },
+                    options = customSupplies.map { it.supply?.name ?: "No name" },
                     selected = selectedCustom?.supply?.name,
                     onSelect = { name ->
-                        selectedCustom = customSuppliesWithNames.find { it.supply?.name == name }
+                        selectedCustom = customSupplies.find { it.supply?.name == name }
                     }
                 )
             } else {
@@ -94,34 +91,37 @@ fun BatchFormScreen(
                 singleLine = true
             )
 
-            OutlinedTextField(
-                value = expirationDate,
-                onValueChange = { /* disabled manual */ },
-                label = { Text("Expiration Date (optional)") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDatePicker = true },
-                enabled = false,
-                trailingIcon = {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Pick date")
-                }
-            )
 
-            if (showDatePicker) {
-                DatePickerDialog(
-                    onDismissRequest = { showDatePicker = false },
-                    confirmButton = {
-                        TextButton(onClick = { showDatePicker = false }) {
-                            Text("OK", color = greenColor, fontWeight = FontWeight.Bold)
-                        }
+            if (selectedCustom?.supply?.perishable == true) {
+                OutlinedTextField(
+                    value = expirationDate,
+                    onValueChange = { /* disabled manual */ },
+                    label = { Text("Expiration Date") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true },
+                    enabled = false,
+                    trailingIcon = {
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Pick date")
                     }
-                ) {
-                    val datePickerState = rememberDatePickerState()
-                    DatePicker(state = datePickerState)
-                    LaunchedEffect(datePickerState.selectedDateMillis) {
-                        datePickerState.selectedDateMillis?.let { millis ->
-                            val date = java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(millis))
-                            expirationDate = date
+                )
+
+                if (showDatePicker) {
+                    DatePickerDialog(
+                        onDismissRequest = { showDatePicker = false },
+                        confirmButton = {
+                            TextButton(onClick = { showDatePicker = false }) {
+                                Text("OK", color = greenColor, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    ) {
+                        val datePickerState = rememberDatePickerState()
+                        DatePicker(state = datePickerState)
+                        LaunchedEffect(datePickerState.selectedDateMillis) {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                val date = java.text.SimpleDateFormat("yyyy-MM-dd").format(java.util.Date(millis))
+                                expirationDate = date
+                            }
                         }
                     }
                 }
@@ -132,12 +132,20 @@ fun BatchFormScreen(
             Button(
                 onClick = {
                     if (selectedCustom != null && stock.isNotBlank()) {
+                        val isPerishable = selectedCustom!!.supply?.perishable == true
+
+                        val finalExpirationDate = if (isPerishable) {
+                            expirationDate.ifBlank { null }
+                        } else {
+                            "9999-12-31"
+                        }
+
                         val newBatch = Batch(
                             id = existingBatch?.id ?: "",
                             userId = existingBatch?.userId ?: 1,
                             customSupply = selectedCustom!!,
-                            stock = stock.toInt(),
-                            expirationDate = expirationDate.ifBlank { null }
+                            stock = stock.toDouble(),
+                            expirationDate = finalExpirationDate
                         )
 
                         if (isEditing) viewModel.updateBatch(newBatch)
