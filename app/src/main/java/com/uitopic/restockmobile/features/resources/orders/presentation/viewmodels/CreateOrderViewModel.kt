@@ -265,7 +265,7 @@ class CreateOrderViewModel : ViewModel() {
                 Batch(
                     id = "B001",
                     userId = 100,
-                    stock = 320,
+                    stock = 320.0,
                     expirationDate = "2025-12-30",
                     customSupply = CustomSupply(
                         id = 1,
@@ -289,7 +289,7 @@ class CreateOrderViewModel : ViewModel() {
                 Batch(
                     id = "B002",
                     userId = 101,
-                    stock = 400,
+                    stock = 400.0,
                     expirationDate = "2025-12-25",
                     customSupply = CustomSupply(
                         id = 2,
@@ -313,7 +313,7 @@ class CreateOrderViewModel : ViewModel() {
                 Batch(
                     id = "B003",
                     userId = 102,
-                    stock = 200,
+                    stock = 200.0,
                     expirationDate = "2025-12-20",
                     customSupply = CustomSupply(
                         id = 3,
@@ -337,7 +337,7 @@ class CreateOrderViewModel : ViewModel() {
                 Batch(
                     id = "B004",
                     userId = 103,
-                    stock = 150,
+                    stock = 150.0,
                     expirationDate = "2025-12-15",
                     customSupply = CustomSupply(
                         id = 4,

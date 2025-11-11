@@ -132,7 +132,7 @@ fun OrdersContent(
                     batch = Batch(
                         id = "B001",
                         userId = 1,
-                        stock = 20,
+                        stock = 20.0,
                         expirationDate = "2025-12-30",
                         customSupply = CustomSupply(
                             id = 1,
@@ -161,7 +161,7 @@ fun OrdersContent(
                     batch = Batch(
                         id = "B002",
                         userId = 1,
-                        stock = 10,
+                        stock = 10.0,
                         expirationDate = "2025-12-15",
                         customSupply = CustomSupply(
                             id = 2,
