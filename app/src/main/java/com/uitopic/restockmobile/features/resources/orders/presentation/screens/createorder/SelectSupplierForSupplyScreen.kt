@@ -17,7 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uitopic.restockmobile.features.resources.domain.models.Batch
-import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.CreateOrderViewModel
+import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,7 +27,7 @@ fun SelectSupplierForSupplyScreen(
     supplyId: Int,
     onNavigateBack: () -> Unit,
     onNavigateToOrderDetail: () -> Unit,
-    viewModel: CreateOrderViewModel = viewModel()
+    viewModel: OrdersViewModel = viewModel()
 ) {
     val supplierBatches by viewModel.supplierBatches.collectAsState()
     var selectedBatches by remember { mutableStateOf<Set<Batch>>(emptySet()) }
@@ -128,7 +128,7 @@ fun SelectSupplierForSupplyScreen(
                     modifier = Modifier.weight(0.8f)
                 )
                 Text(
-                    text = "Stock",
+                    text = "Available stock",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(0.7f)
