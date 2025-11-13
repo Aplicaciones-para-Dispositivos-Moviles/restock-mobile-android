@@ -12,7 +12,7 @@ fun AuthResponseDto.toDomain(): User {
         id = id,
         username = username,
         roleId = roleId,
-        token = token
+        subscription = subscription
     )
 }
 

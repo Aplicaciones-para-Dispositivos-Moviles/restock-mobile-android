@@ -20,6 +20,7 @@ class TokenManager @Inject constructor(
         private const val KEY_USER_ID = "user_id"
         private const val KEY_USERNAME = "username"
         private const val KEY_ROLE_ID = "role_id"
+        private const val KEY_SUBSCRIPTION = "subscription"
     }
 
     fun saveToken(token: String) {
@@ -30,11 +31,12 @@ class TokenManager @Inject constructor(
         return prefs.getString(KEY_TOKEN, null)
     }
 
-    fun saveUserData(userId: Int, username: String, roleId: Int) {
+    fun saveUserData(userId: Int, username: String, roleId: Int, subscription: Int) {
         prefs.edit().apply {
             putInt(KEY_USER_ID, userId)
             putString(KEY_USERNAME, username)
             putInt(KEY_ROLE_ID, roleId)
+            putInt(KEY_SUBSCRIPTION, subscription)
             apply()
         }
     }
@@ -49,6 +51,10 @@ class TokenManager @Inject constructor(
 
     fun getRoleId(): Int {
         return prefs.getInt(KEY_ROLE_ID, -1)
+    }
+
+    fun getSubscription(): Int {
+        return prefs.getInt(KEY_SUBSCRIPTION, 0)
     }
 
     fun isLoggedIn(): Boolean {

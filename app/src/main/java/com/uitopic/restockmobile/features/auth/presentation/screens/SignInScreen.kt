@@ -22,15 +22,15 @@ import com.uitopic.restockmobile.features.auth.presentation.viewmodels.AuthViewM
 @Composable
 fun SignInScreen(
     onNavigateToSignUp: () -> Unit,
-    onSignInSuccess: () -> Unit,
+    onSignInSuccess: (subscription: Int) -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val state = viewModel.signInState
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state.success) {
-        if (state.success) {
-            onSignInSuccess()
+        if (state.success && state.user != null) {
+            onSignInSuccess(state.user.subscription)
         }
     }
 
@@ -142,3 +142,4 @@ fun SignInScreen(
         }
     }
 }
+
