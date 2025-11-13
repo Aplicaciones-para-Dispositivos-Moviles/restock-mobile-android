@@ -9,26 +9,27 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.uitopic.restockmobile.features.resources.orders.presentation.screens.OrdersScreen
+import com.uitopic.restockmobile.features.resources.orders.presentation.screens.currentorders.OrderDetailScreen
+import com.uitopic.restockmobile.features.resources.orders.presentation.screens.currentorders.OrdersScreen
 import com.uitopic.restockmobile.features.resources.orders.presentation.screens.createorder.CreateOrderScreen
-import com.uitopic.restockmobile.features.resources.orders.presentation.screens.createorder.SelectCategoryScreen
 import com.uitopic.restockmobile.features.resources.orders.presentation.screens.createorder.SelectSupplierForSupplyScreen
-import com.uitopic.restockmobile.features.resources.orders.presentation.screens.createorder.SelectSupplyScreen
-import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.CreateOrderViewModel
+import com.uitopic.restockmobile.features.resources.orders.presentation.screens.createorder.SelectCustomSupplyScreen
+
 import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
 
 sealed class OrdersRoute(val route: String) {
     data object Orders : OrdersRoute("orders")
+    object CreateOrderSelectCustomSupply : OrdersRoute("orders/create/search")
 
-    object CreateOrderSelectCategory : OrdersRoute("orders/create/category")
-    object CreateOrderSelectSupply : OrdersRoute("orders/create/supply/{category}") {
-        fun createRoute(category: String) = "orders/create/supply/$category"
-    }
     object CreateOrderSelectSupplier : OrdersRoute("orders/create/supplier/{supplyId}") {
         fun createRoute(supplyId: Int) = "orders/create/supplier/$supplyId"
     }
     object CreateOrderDetail : OrdersRoute("orders/create/detail/{adminRestaurantId}") {
         fun createRoute(adminRestaurantId: Int) = "orders/create/detail/$adminRestaurantId"
+    }
+
+    object OrderDetail : OrdersRoute("orders/detail/{orderId}") {
+        fun createRoute(orderId: Int) = "orders/detail/$orderId"
     }
 }
 
@@ -37,8 +38,8 @@ fun NavGraphBuilder.ordersNavGraph(
     navController: NavController,
     adminRestaurantId: Int
 ) {
-    composable(OrdersRoute.Orders.route) {
-        val ordersViewModel: OrdersViewModel = viewModel()
+    composable(OrdersRoute.Orders.route) { backStackEntry ->
+        val ordersViewModel: OrdersViewModel = viewModel(backStackEntry)
 
         OrdersScreen(
             viewModel = ordersViewModel,
@@ -64,61 +65,36 @@ fun NavGraphBuilder.ordersNavGraph(
                 navController.navigate("sign_in")
             },
             onCreateOrder = {
-                navController.navigate(OrdersRoute.CreateOrderSelectCategory.route)
-            }
-        )
-    }
-
-    //===============================================
-
-    // ===== FLUJO DE CREACIÓN DE ORDEN =====
-    // Compartiendo el mismo CreateOrderViewModel
-
-    // 1. Seleccionar categoría
-    composable(OrdersRoute.CreateOrderSelectCategory.route) { backStackEntry ->
-        val parentEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(OrdersRoute.CreateOrderSelectCategory.route)
-        }
-        val createOrderViewModel: CreateOrderViewModel = viewModel(parentEntry)
-
-        SelectCategoryScreen(
-            viewModel = createOrderViewModel,
-            onNavigateBack = {
-                navController.popBackStack()
+                navController.navigate(OrdersRoute.CreateOrderSelectCustomSupply.route)
             },
-            onNavigateToSelectSupply = { category ->
-                navController.navigate(OrdersRoute.CreateOrderSelectSupply.createRoute(category))
+            onOrderClick = { orderId ->
+                navController.navigate(OrdersRoute.OrderDetail.createRoute(orderId))
             }
         )
     }
 
-    // 2. Seleccionar supply
+    // 1. Seleccionar supply
     composable(
-        route = OrdersRoute.CreateOrderSelectSupply.route,
-        arguments = listOf(
-            navArgument("category") { type = NavType.StringType }
-        )
+        route = OrdersRoute.CreateOrderSelectCustomSupply.route
     ) { backStackEntry ->
-        val category = backStackEntry.arguments?.getString("category") ?: "all categories"
         val parentEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(OrdersRoute.CreateOrderSelectCategory.route)
+            navController.getBackStackEntry(OrdersRoute.Orders.route)
         }
-        val createOrderViewModel: CreateOrderViewModel = viewModel(parentEntry)
+        val ordersViewModel: OrdersViewModel = viewModel(parentEntry)
 
-        SelectSupplyScreen(
-            viewModel = createOrderViewModel,
-            category = category,
+        SelectCustomSupplyScreen(
+            viewModel = ordersViewModel,
             userId = adminRestaurantId,
             onNavigateBack = {
                 navController.popBackStack()
             },
-            onNavigateToSelectSuppliers = { supplyId ->
+            onSupplySelected = { supplyId ->
                 navController.navigate(OrdersRoute.CreateOrderSelectSupplier.createRoute(supplyId))
             }
         )
     }
 
-    // 3. Seleccionar proveedores para un supply
+    // 2. Seleccionar proveedores para un supply
     composable(
         route = OrdersRoute.CreateOrderSelectSupplier.route,
         arguments = listOf(
@@ -127,12 +103,12 @@ fun NavGraphBuilder.ordersNavGraph(
     ) { backStackEntry ->
         val supplyId = backStackEntry.arguments?.getInt("supplyId") ?: 0
         val parentEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(OrdersRoute.CreateOrderSelectCategory.route)
+            navController.getBackStackEntry(OrdersRoute.Orders.route)
         }
-        val createOrderViewModel: CreateOrderViewModel = viewModel(parentEntry)
+        val ordersViewModel: OrdersViewModel = viewModel(parentEntry)
 
         SelectSupplierForSupplyScreen(
-            viewModel = createOrderViewModel,
+            viewModel = ordersViewModel,
             supplyId = supplyId,
             onNavigateBack = {
                 navController.popBackStack()
@@ -143,34 +119,55 @@ fun NavGraphBuilder.ordersNavGraph(
         )
     }
 
-    // 4. Detalles de la orden y confirmación
-    composable(OrdersRoute.CreateOrderDetail.route) { backStackEntry ->
+    // 3. Detalles de la orden y confirmación
+    composable(
+        route = OrdersRoute.CreateOrderDetail.route
+    ) { backStackEntry ->
         val parentEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(OrdersRoute.CreateOrderSelectCategory.route)
+            navController.getBackStackEntry(OrdersRoute.Orders.route)
         }
-        val createOrderViewModel: CreateOrderViewModel = viewModel(parentEntry)
+        val ordersViewModel: OrdersViewModel = viewModel(parentEntry)
 
         CreateOrderScreen(
-            viewModel = createOrderViewModel,
+            viewModel = ordersViewModel,
             adminRestaurantId = adminRestaurantId,
             onNavigateBack = {
                 navController.popBackStack()
             },
             onAddMoreSupplies = {
-                // Volver a la selección de categoría para agregar más supplies
-                navController.navigate(OrdersRoute.CreateOrderSelectCategory.route) {
+                navController.navigate(OrdersRoute.CreateOrderSelectCustomSupply.route) {
                     popUpTo(OrdersRoute.CreateOrderDetail.route) {
-                        inclusive = true
+                        inclusive = false
                     }
                 }
             },
             onRequestSuccess = {
-                // Volver a la lista de órdenes y limpiar el back stack
-                navController.navigate(OrdersRoute.Orders.route) {
-                    popUpTo(OrdersRoute.Orders.route) {
-                        inclusive = true
-                    }
-                }
+                navController.popBackStack(
+                    route = OrdersRoute.Orders.route,
+                    inclusive = false  // NO destruir Orders
+                )
+            }
+        )
+    }
+
+    // 4. Pantalla de detalle de orden existente
+    composable(
+        route = OrdersRoute.OrderDetail.route,
+        arguments = listOf(
+            navArgument("orderId") { type = NavType.IntType }
+        )
+    ) { backStackEntry ->
+        val orderId = backStackEntry.arguments?.getInt("orderId") ?: 0
+        val parentEntry = remember(backStackEntry) {
+            navController.getBackStackEntry(OrdersRoute.Orders.route)
+        }
+        val ordersViewModel: OrdersViewModel = viewModel(parentEntry)
+
+        OrderDetailScreen(
+            viewModel = ordersViewModel,
+            orderId = orderId,
+            onNavigateBack = {
+                navController.popBackStack()
             }
         )
     }
