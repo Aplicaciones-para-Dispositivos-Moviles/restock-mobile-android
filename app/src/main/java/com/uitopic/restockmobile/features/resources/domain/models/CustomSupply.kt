@@ -7,8 +7,8 @@ data class CustomSupply(
     val price: Double,
     val userId: Int?,
     val supplyId: Int,
-    val supply: Supply?,
+    val supply: Supply? = null,
     val unit: UnitModel,
-    val currencyCode: String,
+    val currencyCode: String? = null,
     val description: String,
 )

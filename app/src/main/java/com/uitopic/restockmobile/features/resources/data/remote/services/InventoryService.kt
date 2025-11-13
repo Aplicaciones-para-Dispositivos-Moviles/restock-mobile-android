@@ -1,10 +1,12 @@
 package com.uitopic.restockmobile.features.resources.data.remote.services
 
+import CustomSupplyDto
+import CustomSupplyRequestDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.BatchDto
-import com.uitopic.restockmobile.features.resources.data.remote.models.CustomSupplyDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.SupplyDto
 import retrofit2.Response
 import retrofit2.http.*
+import kotlin.Int
 
 interface InventoryService {
     @GET("supplies")
@@ -12,6 +14,12 @@ interface InventoryService {
 
     @GET("custom-supplies")
     suspend fun getCustomSupplies(): Response<List<CustomSupplyDto>>
+
+    @GET("custom-supplies/user/{userId}")
+    suspend fun getCustomSuppliesByUserId(@Path("userId") userId: Int): Response<List<CustomSupplyDto>>
+
+    @GET("batches/user/{userId}")
+    suspend fun getBatchesByUserId(@Path("userId" ) userId: Int): Response<List<BatchDto>>
 
     @GET("batches")
     suspend fun getBatches(): Response<List<BatchDto>>
@@ -29,11 +37,11 @@ interface InventoryService {
     suspend fun deleteCustomSupply(@Path("id") id: Int): Response<Unit>
 
     @POST("custom-supplies")
-    suspend fun createCustomSupply(@Body customSupply: CustomSupplyDto): Response<CustomSupplyDto>
+    suspend fun createCustomSupply(@Body customSupply: CustomSupplyRequestDto): Response<CustomSupplyDto>
 
     @PUT("custom-supplies/{id}")
     suspend fun updateCustomSupply(
         @Path("id") id: Int,
-        @Body customSupply: CustomSupplyDto
+        @Body customSupply: CustomSupplyRequestDto
     ): Response<CustomSupplyDto>
 }

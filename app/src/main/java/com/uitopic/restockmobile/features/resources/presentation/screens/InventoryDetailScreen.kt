@@ -26,19 +26,11 @@ fun InventoryDetailScreen(
     onEdit: (String) -> Unit = {}
 ) {
     val batches by viewModel.batches.collectAsState()
-    val customSupplies by viewModel.customSupplies.collectAsState()
-    val supplies by viewModel.supplies.collectAsState()
 
-    // Encuentra el batch
-    val batchRaw = batches.find { it.id == batchId }
+    val batch = batches.find { it.id == batchId }
 
-    // Mapea batch con CustomSupply y Supply completos
-    val batch = batchRaw?.let { b ->
-        val fullCustomSupply = customSupplies.find { it.id == b.customSupply?.id }
-        val fullSupply = fullCustomSupply?.let { cs ->
-            supplies.find { it.id == cs.supplyId } ?: cs.supply
-        }
-        b.copy(customSupply = fullCustomSupply?.copy(supply = fullSupply))
+    LaunchedEffect(batches) {
+        println("🔍 Batch data -> $batches")
     }
 
     val greenColor = Color(0xFF4F8A5B)
@@ -151,24 +143,54 @@ fun BatchDetailContent(batch: Batch, onEdit: () -> Unit, onDelete: () -> Unit, m
         Spacer(Modifier.height(12.dp))
 
         // === Actions ===
+        var showDeleteDialog by remember { mutableStateOf(false) }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            OutlinedButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete")
+            OutlinedButton(
+                onClick = { showDeleteDialog = true },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color.Red
+                )
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
                 Spacer(Modifier.width(6.dp))
                 Text("Delete")
             }
             Spacer(Modifier.width(10.dp))
             Button(
                 onClick = onEdit,
-                colors = ButtonDefaults.buttonColors(containerColor = greenColor, contentColor = Color.White)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F8A5B))
             ) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit")
+                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White)
                 Spacer(Modifier.width(6.dp))
-                Text("Edit")
+                Text("Edit", color = Color.White)
             }
+        }
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Delete batch") },
+                text = { Text("Are you sure you want to delete this batch? This action cannot be undone.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteDialog = false
+                            onDelete()
+                        }
+                    ) {
+                        Text("Delete", color = Color.Red)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

@@ -3,9 +3,10 @@ package com.uitopic.restockmobile.features.resources.data.repositories
 import android.util.Log
 import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.resources.data.remote.mappers.toDomain
-import com.uitopic.restockmobile.features.resources.data.remote.mappers.toDto
+import com.uitopic.restockmobile.features.resources.data.remote.mappers.toRequestDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.BatchDto
 import com.uitopic.restockmobile.features.resources.data.remote.services.InventoryService
+
 import com.uitopic.restockmobile.features.resources.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.domain.models.Supply
@@ -33,23 +34,20 @@ class InventoryRepositoryImpl @Inject constructor(
     // CUSTOM SUPPLIES
     // ---------------------------------------------------------
     override suspend fun getCustomSupplies(): List<CustomSupply> = withContext(Dispatchers.IO) {
-        val customSuppliesResp = service.getCustomSupplies()
-        val suppliesResp = service.getSupplies()
-
-        if (customSuppliesResp.isSuccessful && suppliesResp.isSuccessful) {
-            val customSupplies = customSuppliesResp.body() ?: emptyList()
-            val supplies = suppliesResp.body() ?: emptyList()
-
-            // Create a map for quick lookup
-            val suppliesMap = supplies.associateBy { it.id }
-
-            // Map custom supplies and enrich with supply data
-            customSupplies.map { customDto ->
-                val supplyDto = suppliesMap[customDto.supplyId]
-                customDto.toDomain(supplyDto)
-            }
+        val resp = service.getCustomSupplies()
+        if (resp.isSuccessful) {
+            resp.body()?.map { it.toDomain() } ?: emptyList()
         } else emptyList()
     }
+
+    override suspend fun getCustomSuppliesByUserId(): List<CustomSupply> =
+        withContext(Dispatchers.IO) {
+            val userId = tokenManager.getUserId() ?: return@withContext emptyList()
+            val resp = service.getCustomSuppliesByUserId(userId)
+            if (resp.isSuccessful) {
+                resp.body()?.map { it.toDomain() } ?: emptyList()
+            } else emptyList()
+        }
 
     override suspend fun createCustomSupply(custom: CustomSupply): CustomSupply? =
         withContext(Dispatchers.IO) {
@@ -62,18 +60,24 @@ class InventoryRepositoryImpl @Inject constructor(
                     return@withContext null
                 }
 
-                val dto = custom.toDto(userId)
+                val dto = custom.toRequestDto(userId)
                 Log.d("InventoryRepository", "DTO enviado: $dto")
 
                 val response = service.createCustomSupply(dto)
-                Log.d("InventoryRepository", "Response code: ${response.code()} - success: ${response.isSuccessful}")
+                Log.d(
+                    "InventoryRepository",
+                    "Response code: ${response.code()} - success: ${response.isSuccessful}"
+                )
 
                 if (response.isSuccessful) {
                     val body = response.body()
                     Log.d("InventoryRepository", "Respuesta exitosa: $body")
                     body?.toDomain()
                 } else {
-                    Log.e("InventoryRepository", "Error del servidor: ${response.errorBody()?.string()}")
+                    Log.e(
+                        "InventoryRepository",
+                        "Error del servidor: ${response.errorBody()?.string()}"
+                    )
                     null
                 }
             } catch (e: Exception) {
@@ -87,7 +91,7 @@ class InventoryRepositoryImpl @Inject constructor(
             try {
                 val userId = tokenManager.getUserId() ?: return@withContext null
                 val id = custom.id ?: return@withContext null
-                val dto = custom.toDto(userId)
+                val dto = custom.toRequestDto(userId)
                 val response = service.updateCustomSupply(id, dto)
                 if (response.isSuccessful) response.body()?.toDomain() else null
             } catch (e: Exception) {
@@ -100,7 +104,6 @@ class InventoryRepositoryImpl @Inject constructor(
             try {
                 service.deleteCustomSupply(customSupplyId.toInt())
             } catch (_: Exception) {
-                // Ignorar errores
             }
         }
 
@@ -114,9 +117,16 @@ class InventoryRepositoryImpl @Inject constructor(
         } else emptyList()
     }
 
+    override suspend fun getBatchesByUserId(): List<Batch> = withContext(Dispatchers.IO) {
+        val userId = tokenManager.getUserId() ?: return@withContext emptyList()
+        val resp = service.getBatchesByUserId(userId)
+        if (resp.isSuccessful) {
+            resp.body()?.map { it.toDomain() } ?: emptyList()
+        } else emptyList()
+    }
+
     override suspend fun createBatch(batch: Batch): Batch? = withContext(Dispatchers.IO) {
         try {
-            // Creamos el DTO
             val dto = BatchDto(
                 id = null,
                 userId = batch.userId,
@@ -125,17 +135,10 @@ class InventoryRepositoryImpl @Inject constructor(
                 expirationDate = batch.expirationDate
             )
 
-            // Log del DTO enviado
-            Log.d("InventoryRepository", "Enviando createBatch DTO: $dto")
 
-            // Llamada al service
             val resp = service.createBatch(dto)
 
-            // Log de la respuesta
-            Log.d("InventoryRepository", "Response code: ${resp.code()}, isSuccessful: ${resp.isSuccessful}")
-            Log.d("InventoryRepository", "Response body: ${resp.body()}")
 
-            // Retorno del body mapeado a domain
             if (resp.isSuccessful) {
                 val domainBatch = resp.body()?.toDomain()
                 Log.d("InventoryRepository", "Batch creado en domain: $domainBatch")
@@ -145,7 +148,7 @@ class InventoryRepositoryImpl @Inject constructor(
                 null
             }
         } catch (e: Exception) {
-            Log.e("InventoryRepository", "Excepción en createBatch: ${e.message}", e)
+
             null
         }
     }
