@@ -14,7 +14,7 @@ sealed class AuthRoute(val route: String) {
 
 fun NavGraphBuilder.authNavGraph(
     navController: NavController,
-    onAuthSuccess: () -> Unit
+    onAuthSuccess: (subscription: Int) -> Unit
 ) {
     navigation(
         startDestination = AuthRoute.SignIn.route,
@@ -25,7 +25,9 @@ fun NavGraphBuilder.authNavGraph(
                 onNavigateToSignUp = {
                     navController.navigate(AuthRoute.SignUp.route)
                 },
-                onSignInSuccess = onAuthSuccess
+                onSignInSuccess = { subscription ->
+                    onAuthSuccess(subscription)
+                }
             )
         }
 
@@ -34,8 +36,11 @@ fun NavGraphBuilder.authNavGraph(
                 onNavigateBack = {
                     navController.navigateUp()
                 },
-                onSignUpSuccess = onAuthSuccess
+                onSignUpSuccess = {
+                    onAuthSuccess(0)
+                }
             )
         }
     }
 }
+

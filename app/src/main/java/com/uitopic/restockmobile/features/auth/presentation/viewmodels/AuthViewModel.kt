@@ -61,10 +61,11 @@ class AuthViewModel @Inject constructor(
             )
 
             repository.signIn(request)
-                .onSuccess {
+                .onSuccess { user ->
                     signInState = signInState.copy(
                         isLoading = false,
-                        success = true
+                        success = true,
+                        user = user
                     )
                 }
                 .onFailure { error ->
