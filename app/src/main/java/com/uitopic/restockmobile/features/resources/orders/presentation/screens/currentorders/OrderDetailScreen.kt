@@ -1,4 +1,4 @@
-package com.uitopic.restockmobile.features.resources.orders.presentation.screens
+package com.uitopic.restockmobile.features.resources.orders.presentation.screens.currentorders
 
 
 import androidx.compose.foundation.layout.*
@@ -18,15 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.uitopic.restockmobile.features.auth.domain.models.User
-import com.uitopic.restockmobile.features.profiles.domain.models.Profile
-import com.uitopic.restockmobile.features.resources.domain.models.Batch
-import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
-import com.uitopic.restockmobile.features.resources.domain.models.Supply
-import com.uitopic.restockmobile.features.resources.domain.models.UnitModel
-import com.uitopic.restockmobile.features.resources.orders.domain.models.Order
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderBatchItem
-import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderSituation
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderState
 import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
@@ -41,19 +33,8 @@ fun OrderDetailScreen(
 ) {
     val allOrders by viewModel.orders.collectAsState()
 
-    // ✅ SOLUCIÓN: Buscar por índice directamente
     val order = remember(allOrders, orderId) {
         allOrders.getOrNull(orderId)
-    }
-
-    // 🔍 Debug: Imprimir para verificar
-    LaunchedEffect(orderId, allOrders.size) {
-        println("🔍 OrderDetailScreen - orderId (index): $orderId")
-        println("🔍 Total orders: ${allOrders.size}")
-        println("🔍 Order found: ${order != null}")
-        if (order != null) {
-            println("🔍 Supplier: ${order.supplier?.username}")
-        }
     }
 
     Scaffold(
