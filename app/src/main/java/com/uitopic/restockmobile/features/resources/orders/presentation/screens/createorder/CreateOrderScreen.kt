@@ -20,7 +20,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderBatchItem
-import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.CreateOrderViewModel
+import com.uitopic.restockmobile.features.resources.orders.presentation.screens.ui.OrderBatchItemCard
+import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 
 @SuppressLint("DefaultLocale")
@@ -33,10 +34,10 @@ fun CreateOrderScreen(
     onNavigateBack: () -> Unit,
     onAddMoreSupplies: () -> Unit,
     onRequestSuccess: () -> Unit,
-    viewModel: CreateOrderViewModel = viewModel()
+    viewModel: OrdersViewModel = viewModel()
 ) {
     val orderBatchItems by viewModel.orderBatchItems.collectAsState()
-    val totalAmount = viewModel.calculateTotal()
+    val totalAmount by viewModel.totalAmount.collectAsState()
 
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
@@ -193,137 +194,6 @@ fun CreateOrderScreen(
                 }
             }
         )
-    }
-}
-
-@Composable
-fun OrderBatchItemCard(
-    item: OrderBatchItem,
-    onQuantityChange: (Double) -> Unit,
-    onRemove: () -> Unit
-) {
-    var quantity by remember { mutableStateOf(item.quantity.toString()) }
-    val supplierName = "Supplier ${item.batch?.userId ?: "Unknown"}"
-    val supplyName = item.batch?.customSupply?.supply?.name
-        ?: item.batch?.customSupply?.description
-        ?: "Unknown Supply"
-    val price = item.batch?.customSupply?.price ?: 0.0
-    val unit = item.batch?.customSupply?.unit?.abbreviation ?: "u"
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = supplierName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = supplyName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Remove",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Quantity",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = quantity,
-                            onValueChange = {
-                                quantity = it
-                                val newQty = it.toDoubleOrNull() ?: item.quantity
-                                onQuantityChange(newQty)
-                            },
-                            modifier = Modifier.width(70.dp),
-                            textStyle = MaterialTheme.typography.bodyMedium,
-                            singleLine = true
-                        )
-                        Text(
-                            text = unit,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Text(
-                    text = "×",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                Column {
-                    Text(
-                        text = "Price",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "S/ ${String.format("%.2f", price)}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Text(
-                    text = "=",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "Total",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "S/ ${String.format("%.0f", (quantity.toDoubleOrNull() ?: 0.0) * price)}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
     }
 }
 
