@@ -4,6 +4,7 @@ import com.uitopic.restockmobile.features.auth.domain.models.User
 
 
 data class Order(
+    val id: Int,
     val adminRestaurantId: Int,
     val supplierId: Int,
     val supplier: User,
