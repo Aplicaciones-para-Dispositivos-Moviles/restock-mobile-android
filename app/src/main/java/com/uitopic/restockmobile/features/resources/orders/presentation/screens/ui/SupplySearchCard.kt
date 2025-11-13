@@ -51,7 +51,7 @@ fun SupplySearchCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "${supply.unit.name} •}",
+                    text = "${supply.unit.name} •",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 4.dp)
