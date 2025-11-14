@@ -20,9 +20,11 @@ import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.orders.presentation.screens.ui.SupplySearchCard
 import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
+import com.uitopic.restockmobile.features.resources.presentation.viewmodels.InventoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,9 +33,11 @@ fun SelectCustomSupplyScreen(
     userId: Int,
     onNavigateBack: () -> Unit,
     onSupplySelected: (Int) -> Unit,
-    viewModel: OrdersViewModel = viewModel()
+    ordersViewModel: OrdersViewModel = hiltViewModel(),
+    inventoryViewModel: InventoryViewModel = hiltViewModel()
 ) {
-    val customSupplies by viewModel.customSupplies.collectAsState()
+    // CAMBIADO: Ahora obtenemos customSupplies del InventoryViewModel
+    val customSupplies by inventoryViewModel.customSupplies.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
     // Filtrar supplies por búsqueda
@@ -48,9 +52,8 @@ fun SelectCustomSupplyScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadUserCustomSupplies(userId)
-    }
+    // Ya no necesitamos loadUserCustomSupplies porque InventoryViewModel carga automáticamente
+    // en su init
 
     Scaffold(
         topBar = {
@@ -79,24 +82,6 @@ fun SelectCustomSupplyScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-
-                /* OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search supplies (e.g., rice, oil...)") },
-                    leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
-                    },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, "Clear")
-                            }
-                        }
-                    },
-                    singleLine = true
-                ) */
 
                 OutlinedTextField(
                     value = searchQuery,
@@ -186,7 +171,6 @@ fun SelectCustomSupplyScreen(
                             SupplySearchCard(
                                 supply = customSupply,
                                 onClick = { onSupplySelected(customSupply.supplyId) }
-
                             )
                         }
                     }
@@ -195,7 +179,6 @@ fun SelectCustomSupplyScreen(
         }
     }
 }
-
 
 /*
 @OptIn(ExperimentalMaterial3Api::class)

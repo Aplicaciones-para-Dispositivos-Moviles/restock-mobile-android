@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,9 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uitopic.restockmobile.features.resources.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
+import com.uitopic.restockmobile.features.resources.presentation.viewmodels.InventoryViewModel
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,15 +30,21 @@ fun SelectSupplierForSupplyScreen(
     supplyId: Int,
     onNavigateBack: () -> Unit,
     onNavigateToOrderDetail: () -> Unit,
-    viewModel: OrdersViewModel = viewModel()
+    ordersViewModel: OrdersViewModel = hiltViewModel(),
+    inventoryViewModel: InventoryViewModel = hiltViewModel()
 ) {
-    val supplierBatches by viewModel.supplierBatches.collectAsState()
+    // CAMBIADO: Ahora obtenemos batches del InventoryViewModel
+    val allBatches by inventoryViewModel.batches.collectAsState()
+
+    // Filtrar batches por supplyId
+    val supplierBatches = remember(allBatches, supplyId) {
+        allBatches.filter { batch ->
+            batch.customSupply?.supplyId == supplyId
+        }
+    }
+
     var selectedBatches by remember { mutableStateOf<Set<Batch>>(emptySet()) }
     var sortByPriceDesc by remember { mutableStateOf(false) }
-
-    LaunchedEffect(supplyId) {
-        viewModel.loadSupplierBatchesForSupply(supplyId)
-    }
 
     val sortedBatches = if (sortByPriceDesc) {
         supplierBatches.sortedByDescending { it.customSupply?.price ?: 0.0 }
@@ -138,22 +147,46 @@ fun SelectSupplierForSupplyScreen(
 
             HorizontalDivider()
 
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(sortedBatches) { batch ->
-                    SupplierBatchRow(
-                        batch = batch,
-                        isSelected = selectedBatches.contains(batch),
-                        onToggleSelection = {
-                            selectedBatches = if (selectedBatches.contains(batch)) {
-                                selectedBatches - batch
-                            } else {
-                                selectedBatches + batch
+            if (sortedBatches.isEmpty()) {
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Inventory2,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "No suppliers available for this supply",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(sortedBatches) { batch ->
+                        SupplierBatchRow(
+                            batch = batch,
+                            isSelected = selectedBatches.contains(batch),
+                            onToggleSelection = {
+                                selectedBatches = if (selectedBatches.contains(batch)) {
+                                    selectedBatches - batch
+                                } else {
+                                    selectedBatches + batch
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
 
@@ -174,7 +207,7 @@ fun SelectSupplierForSupplyScreen(
                 }
                 Button(
                     onClick = {
-                        viewModel.addMultipleBatchesToOrder(selectedBatches.toList())
+                        ordersViewModel.addMultipleBatchesToOrder(selectedBatches.toList())
                         onNavigateToOrderDetail()
                     },
                     colors = ButtonDefaults.buttonColors(

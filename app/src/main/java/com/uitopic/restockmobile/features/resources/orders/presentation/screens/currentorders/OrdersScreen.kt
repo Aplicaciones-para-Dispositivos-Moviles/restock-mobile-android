@@ -42,13 +42,14 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.uitopic.restockmobile.features.resources.orders.presentation.screens.ui.OrderCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrdersScreen(
     modifier: Modifier = Modifier,
-    viewModel: OrdersViewModel = viewModel(),
+    viewModel: OrdersViewModel = hiltViewModel(),
 
     userName: String = "User",
     userEmail: String = "user@example.com",

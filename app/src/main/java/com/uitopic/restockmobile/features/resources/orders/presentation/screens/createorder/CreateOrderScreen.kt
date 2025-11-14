@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderBatchItem
 import com.uitopic.restockmobile.features.resources.orders.presentation.screens.ui.OrderBatchItemCard
@@ -30,11 +32,12 @@ import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 @Composable
 fun CreateOrderScreen(
     modifier: Modifier = Modifier,
+    supplierId: Int,
     adminRestaurantId: Int,
     onNavigateBack: () -> Unit,
     onAddMoreSupplies: () -> Unit,
     onRequestSuccess: () -> Unit,
-    viewModel: OrdersViewModel = viewModel()
+    viewModel: OrdersViewModel = hiltViewModel()
 ) {
     val orderBatchItems by viewModel.orderBatchItems.collectAsState()
     val totalAmount by viewModel.totalAmount.collectAsState()
@@ -96,20 +99,44 @@ fun CreateOrderScreen(
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(orderBatchItems) { item ->
-                    OrderBatchItemCard(
-                        item = item,
-                        onQuantityChange = { newQuantity ->
-                            viewModel.updateItemQuantity(item.batchId, newQuantity)
-                        },
-                        onRemove = {
-                            viewModel.removeItem(item.batchId)
-                        }
-                    )
+            if (orderBatchItems.isEmpty()) {
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ShoppingCart,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "No items added yet",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(orderBatchItems) { item ->
+                        OrderBatchItemCard(
+                            item = item,
+                            onQuantityChange = { newQuantity ->
+                                viewModel.updateItemQuantity(item.batchId, newQuantity)
+                            },
+                            onRemove = {
+                                viewModel.removeItem(item.batchId)
+                            }
+                        )
+                    }
                 }
             }
 
@@ -161,6 +188,7 @@ fun CreateOrderScreen(
                 Button(
                     onClick = {
                         viewModel.submitOrder(
+                            supplierId = supplierId,
                             adminRestaurantId = adminRestaurantId,
                             onSuccess = onRequestSuccess,
                             onError = { error ->
@@ -197,12 +225,14 @@ fun CreateOrderScreen(
     }
 }
 
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
 fun OrdersDetailPreview() {
     RestockmobileTheme {
         CreateOrderScreen(
+            supplierId = 1,
             adminRestaurantId = 1,
             onNavigateBack = {},
             onAddMoreSupplies = {},
