@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/*
 class OrdersViewModel(/* private val repository: OrdersRepository */) : ViewModel() {
 
     // ===== ESTADO PARA LA LISTA DE ÓRDENES =====
@@ -539,6 +540,10 @@ class OrdersViewModel(/* private val repository: OrdersRepository */) : ViewMode
         _customSupplies.value = emptyList()
     }
 }
+*/
+
+//===============================================================
+
 
 /* class OrdersViewModel: ViewModel() {
 
@@ -598,3 +603,5 @@ class OrdersViewModel(/* private val repository: OrdersRepository */) : ViewMode
         loadOrders()
     }
 } */
+
+
