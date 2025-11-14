@@ -32,8 +32,6 @@ import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 @Composable
 fun CreateOrderScreen(
     modifier: Modifier = Modifier,
-    supplierId: Int,
-    adminRestaurantId: Int,
     onNavigateBack: () -> Unit,
     onAddMoreSupplies: () -> Unit,
     onRequestSuccess: () -> Unit,
@@ -188,8 +186,6 @@ fun CreateOrderScreen(
                 Button(
                     onClick = {
                         viewModel.submitOrder(
-                            supplierId = supplierId,
-                            adminRestaurantId = adminRestaurantId,
                             onSuccess = onRequestSuccess,
                             onError = { error ->
                                 errorMessage = error
@@ -232,8 +228,6 @@ fun CreateOrderScreen(
 fun OrdersDetailPreview() {
     RestockmobileTheme {
         CreateOrderScreen(
-            supplierId = 1,
-            adminRestaurantId = 1,
             onNavigateBack = {},
             onAddMoreSupplies = {},
             onRequestSuccess = {}
