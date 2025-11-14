@@ -5,6 +5,9 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.uitopic.restockmobile.core.auth.local.TokenManager
+import com.uitopic.restockmobile.features.auth.domain.models.User
+import com.uitopic.restockmobile.features.profiles.domain.models.Profile
 import com.uitopic.restockmobile.features.resources.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.orders.domain.models.Order
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderBatchItem
@@ -23,7 +26,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OrdersViewModel @Inject constructor(
-    private val repository: OrdersRepository
+    private val repository: OrdersRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     // ===== ESTADO PARA LA LISTA DE ÓRDENES =====
@@ -161,10 +165,17 @@ class OrdersViewModel @Inject constructor(
         }
     }
 
+    // Función auxiliar para obtener el ID del usuario actual
+    private fun getCurrentUserId(): Int {
+        return tokenManager.getUserId()
+    }
+
+    private fun getCurrentUserRoleId(): Int {
+        return tokenManager.getRoleId()
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     fun submitOrder(
-        adminRestaurantId: Int,
-        supplierId: Int,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -175,15 +186,28 @@ class OrdersViewModel @Inject constructor(
                     return@launch
                 }
 
+                val currentUserId = getCurrentUserId()
+                if (currentUserId == -1) {
+                    onError("User not logged in")
+                    return@launch
+                }
+
+                val supplierId = _orderBatchItems.value.firstOrNull()?.batch?.userId
+
+                if (supplierId == null) {
+                    onError("Supplier not found")
+                    return@launch
+                }
+
                 val order = Order(
                     id = 0,
-                    adminRestaurantId = adminRestaurantId,
+                    adminRestaurantId = currentUserId,
                     supplierId = supplierId,
-                    supplier = com.uitopic.restockmobile.features.auth.domain.models.User(
+                    supplier = User(
                         id = supplierId,
                         username = "temp",
                         roleId = 2,
-                        profile = com.uitopic.restockmobile.features.profiles.domain.models.Profile(
+                        profile = Profile(
                             id = 0,
                             firstName = "",
                             lastName = "",
