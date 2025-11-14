@@ -70,7 +70,7 @@ fun Order.toRequestDto(): OrderRequestDto {
         totalPrice = this.totalPrice,
         state = this.state.name,
         situation = this.situation.name,
-        batchItems = this.batchItems.map { it.toRequestDto() }
+        batches = this.batchItems.map { it.toRequestDto() }
     )
 }
 
@@ -78,7 +78,7 @@ fun OrderBatchItem.toRequestDto(): OrderBatchItemRequestDto {
     return OrderBatchItemRequestDto(
         batchId = this.batchId,
         quantity = this.quantity,
-        accepted = this.accepted
+        accept = this.accepted
     )
 }
 
