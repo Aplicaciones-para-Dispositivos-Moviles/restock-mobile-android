@@ -1,6 +1,7 @@
 package com.uitopic.restockmobile.features.resources.orders.data.remote.models
 
 
+import com.google.gson.annotations.SerializedName
 import com.uitopic.restockmobile.core.auth.remote.models.UserDto
 import com.uitopic.restockmobile.features.resources.data.remote.models.BatchDto
 
@@ -34,11 +35,11 @@ data class OrderRequestDto(
     val totalPrice: Double,
     val state: String,
     val situation: String,
-    val batchItems: List<OrderBatchItemRequestDto>
+    val batches: List<OrderBatchItemRequestDto>
 )
 
 data class OrderBatchItemRequestDto(
     val batchId: Int,
     val quantity: Double,
-    val accepted: Boolean = false
+    val accept: Boolean = false
 )
