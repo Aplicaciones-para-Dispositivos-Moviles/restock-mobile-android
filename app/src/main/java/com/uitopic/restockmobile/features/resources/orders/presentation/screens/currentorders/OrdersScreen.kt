@@ -103,7 +103,7 @@ fun OrdersContent(
 
 
     // Ordenes de ejemplo (temporal)
-    val sampleOrders = remember {
+    /* val sampleOrders = remember {
         listOf(
             Order(
                 id = 1,
@@ -198,7 +198,7 @@ fun OrdersContent(
                 batchItems = emptyList()
             )
         )
-    }
+    } */
 
     val displayOrders = if (searchQuery.isNotBlank()) {
         filteredOrders

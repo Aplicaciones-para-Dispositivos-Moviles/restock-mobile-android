@@ -8,6 +8,7 @@ fun UserDto.toDomain(): User {
         id = this.id ?: 0,
         username = this.username ?: "",
         roleId = this.roleId ?: 0,
-        profile = this.profile?.toDomain()  // si tienes ProfileDto mapper
+        profile = this.profile?.toDomain(),  // si tienes ProfileDto mapper
+        subscription = this.subscription ?: 0,
     )
 }

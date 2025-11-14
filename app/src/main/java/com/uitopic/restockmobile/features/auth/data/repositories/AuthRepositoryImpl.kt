@@ -35,11 +35,12 @@ class AuthRepositoryImpl @Inject constructor(
             val response = apiService.signIn(request.toDto())
 
             if (response.isSuccessful && response.body() != null) {
-                val user = response.body()!!.toDomain()
+                val authResponse = response.body()!!
+                val user = authResponse.toDomain()
 
                 // Guardar token y datos del usuario
-                user.token?.let { tokenManager.saveToken(it) }
-                tokenManager.saveUserData(user.id, user.username, user.roleId)
+                authResponse.token?.let { tokenManager.saveToken(it) }
+                tokenManager.saveUserData(user.id, user.username, user.roleId, user.subscription)
 
                 Result.success(user)
             } else {

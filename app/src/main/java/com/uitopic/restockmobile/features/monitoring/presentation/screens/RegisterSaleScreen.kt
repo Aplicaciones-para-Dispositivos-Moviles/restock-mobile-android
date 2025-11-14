@@ -31,6 +31,9 @@ import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +50,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +66,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.uitopic.restockmobile.features.monitoring.data.DishDataSource
 import com.uitopic.restockmobile.features.monitoring.data.SupplyDataSource
 import com.uitopic.restockmobile.features.monitoring.domain.model.DishOption
@@ -69,6 +74,7 @@ import com.uitopic.restockmobile.features.monitoring.domain.model.DishSelection
 import com.uitopic.restockmobile.features.monitoring.domain.model.RegisteredSale
 import com.uitopic.restockmobile.features.monitoring.domain.model.SupplyOption
 import com.uitopic.restockmobile.features.monitoring.domain.model.SupplySelection
+import com.uitopic.restockmobile.features.monitoring.presentation.viewmodel.RegisterSaleViewModel
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -83,35 +89,52 @@ private val timeFormatter = SimpleDateFormat("hh:mm a", Locale.US)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterSaleScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: RegisterSaleViewModel = hiltViewModel()
 ) {
     // Cargar datos desde las fuentes de datos
     val dishOptions = remember { DishDataSource.getDishOptions() }
     val supplyOptions = remember { SupplyDataSource.getSupplyOptions() }
-
+    val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     var isRegistering by remember { mutableStateOf(false) }
     var dishSelections by remember { mutableStateOf<Map<Int, DishSelection>>(emptyMap()) }
     var selections by remember { mutableStateOf<Map<Int, SupplySelection>>(emptyMap()) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showCreationHint by remember { mutableStateOf(true) }
-    var registeredSales by remember { mutableStateOf<List<RegisteredSale>>(emptyList()) }
-    var nextSaleId by remember { mutableStateOf(1) }
+
 
     LaunchedEffect(isRegistering) {
         if (isRegistering) {
             showCreationHint = false
         }
     }
+    // Mostrar mensajes de error o éxito
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { error ->
+            snackbarHostState.showSnackbar(error)
+            viewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(uiState.successMessage) {
+        uiState.successMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearSuccessMessage()
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             RegisterSaleHeader(
                 onMenuClick = onBack
             )
         }
     ) { padding ->
-        LazyColumn(
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -120,7 +143,7 @@ fun RegisterSaleScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (!isRegistering) {
-                if (registeredSales.isEmpty()) {
+                if (uiState.registeredSales.isEmpty()) {
                     item {
                         EmptySaleState(
                             onCreateSale = { isRegistering = true },
@@ -129,11 +152,11 @@ fun RegisterSaleScreen(
                     }
                 } else {
                     // Mostrar lista de ventas registradas
-                    items(registeredSales) { sale ->
+                    items(uiState.registeredSales) { sale ->
                         RegisteredSaleCard(
                             sale = sale,
                             onDelete = {
-                                registeredSales = registeredSales.filter { it.id != sale.id }
+                                viewModel.cancelSale(sale.id)
                             }
                         )
                     }
@@ -180,7 +203,7 @@ fun RegisterSaleScreen(
 
                 item {
                     SaleActionButtons(
-                        isAddEnabled = dishSelections.isNotEmpty(),
+                        isAddEnabled = dishSelections.isNotEmpty() && !uiState.isLoading,
                         onCancel = {
                             isRegistering = false
                             dishSelections = emptyMap()
@@ -195,40 +218,35 @@ fun RegisterSaleScreen(
                 }
             }
         }
+            // Loading indicator
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        }
     }
 
     if (showSuccessDialog) {
-        RegisterSaleSuccessDialog(
-            dishSelections = dishSelections.values.toList(),
-            selections = selections.values.toList(),
-            onDismiss = {
-                // Calcular el total
-                val dishTotal = dishSelections.values.sumOf { it.option.price * it.quantity }
-                val supplyTotal = selections.values.sumOf { it.option.unitPrice * it.quantity }
-                val subtotal = dishTotal + supplyTotal
-                val total = subtotal + (subtotal * 0.08) // Con impuestos
+            RegisterSaleSuccessDialog(
+                dishSelections = dishSelections.values.toList(),
+                selections = selections.values.toList(),
+                onDismiss = {
+                    // Llamar al ViewModel para crear la venta en el backend
+                    viewModel.createSale(
+                        dishSelections = dishSelections.values.toList(),
+                        supplySelections = selections.values.toList(),
+                        userId = 1 // TODO: Obtener del usuario logueado
+                    )
 
-                // Crear nueva venta registrada
-                val newSale = RegisteredSale(
-                    id = nextSaleId,
-                    saleNumber = "SALE-${String.format("%04d", nextSaleId)}",
-                    dishSelections = dishSelections.values.toList(),
-                    supplySelections = selections.values.toList(),
-                    totalCost = total,
-                    registeredDate = Date()
-                )
+                    showSuccessDialog = false
+                    isRegistering = false
+                    dishSelections = emptyMap()
+                    selections = emptyMap()
+                }
+            )
+        }
 
-                // Agregar al inicio de la lista (más recientes primero)
-                registeredSales = listOf(newSale) + registeredSales
-                nextSaleId++
-
-                showSuccessDialog = false
-                isRegistering = false
-                dishSelections = emptyMap()
-                selections = emptyMap()
-            }
-        )
-    }
 }
 
 @Composable

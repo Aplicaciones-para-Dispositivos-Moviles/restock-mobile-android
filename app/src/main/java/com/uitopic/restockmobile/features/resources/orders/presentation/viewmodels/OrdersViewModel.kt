@@ -220,7 +220,8 @@ class OrdersViewModel @Inject constructor(
                             businessAddress = "",
                             description = null,
                             categories = emptyList()
-                        )
+                        ),
+                        subscription = 0
                     ),
                     requestedDate = java.time.LocalDate.now().toString(),
                     partiallyAccepted = false,

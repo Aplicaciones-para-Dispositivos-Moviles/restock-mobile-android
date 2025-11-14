@@ -7,5 +7,6 @@ data class UserDto(
     @SerializedName("id") val id: Int,
     @SerializedName("username") val username: String,
     @SerializedName("roleId") val roleId: Int,
-    @SerializedName("profile") val profile: ProfileDto?
+    @SerializedName("profile") val profile: ProfileDto?,
+    @SerializedName("subscription") val subscription: Int?
 )

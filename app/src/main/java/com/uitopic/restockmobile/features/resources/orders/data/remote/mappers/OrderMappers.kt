@@ -38,7 +38,8 @@ fun OrderDto.toDomain(): Order {
                 businessAddress = "",
                 description = null,
                 categories = emptyList()
-            )
+            ),
+            subscription = 0
         ),
         requestedDate = this.requestedDate ?: "",
         partiallyAccepted = this.partiallyAccepted ?: false,
