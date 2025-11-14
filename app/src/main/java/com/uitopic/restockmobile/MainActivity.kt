@@ -18,6 +18,7 @@ import com.uitopic.restockmobile.features.planning.presentation.navigation.plann
 import com.uitopic.restockmobile.features.profiles.presentation.navigation.profileNavGraph
 import com.uitopic.restockmobile.features.resources.presentation.navigation.inventoryNavGraph
 import com.uitopic.restockmobile.features.monitoring.presentation.navigation.monitoringNavGraph
+import com.uitopic.restockmobile.features.resources.orders.presentation.navigation.ordersNavGraph
 import com.uitopic.restockmobile.features.subscriptions.presentation.navigation.SubscriptionRoute
 import com.uitopic.restockmobile.features.subscriptions.presentation.navigation.subscriptionNavGraph
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
@@ -61,10 +62,8 @@ fun RestockApp(tokenManager: TokenManager) {
             HomeRoute.Home.route
         }
     } else {
-        // No está logueado -> ir a pantalla de login
         "auth_graph"
     }
-
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -115,6 +114,8 @@ fun RestockApp(tokenManager: TokenManager) {
         inventoryNavGraph(navController)
         // Planning (Recipes)
         planningNavGraph(navController)
+
+        // Resources - Orders
+        ordersNavGraph(navController, 1)
     }
 }
-
