@@ -142,7 +142,7 @@ fun NavGraphBuilder.ordersNavGraph(
             navArgument("adminRestaurantId") { type = NavType.IntType }
         )
     ) { backStackEntry ->
-        val supplierId = backStackEntry.arguments?.getInt("supplierId") ?: 0
+        //val supplierId = backStackEntry.arguments?.getInt("supplierId") ?: 0
         val adminRestaurantId = backStackEntry.arguments?.getInt("adminRestaurantId") ?: 0
 
         val parentEntry = remember(backStackEntry) {
@@ -152,8 +152,6 @@ fun NavGraphBuilder.ordersNavGraph(
 
         CreateOrderScreen(
             viewModel = ordersViewModel,
-            supplierId = supplierId,
-            adminRestaurantId = adminRestaurantId,
             onNavigateBack = {
                 navController.popBackStack()
             },
