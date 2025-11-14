@@ -2,6 +2,7 @@ package com.uitopic.restockmobile.features.resources.orders.presentation.viewmod
 
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +10,7 @@ import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.auth.domain.models.User
 import com.uitopic.restockmobile.features.profiles.domain.models.Profile
 import com.uitopic.restockmobile.features.resources.domain.models.Batch
+import com.uitopic.restockmobile.features.resources.domain.repositories.InventoryRepository
 import com.uitopic.restockmobile.features.resources.orders.domain.models.Order
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderBatchItem
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderSituation
@@ -27,6 +29,7 @@ import javax.inject.Inject
 @HiltViewModel
 class OrdersViewModel @Inject constructor(
     private val repository: OrdersRepository,
+    private val inventoryRepository: InventoryRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
 
@@ -45,6 +48,13 @@ class OrdersViewModel @Inject constructor(
     private val _orderBatchItems = MutableStateFlow<List<OrderBatchItem>>(emptyList())
     val orderBatchItems: StateFlow<List<OrderBatchItem>> = _orderBatchItems.asStateFlow()
 
+    //Estado para batches filtrados por supply
+    private val _availableBatches = MutableStateFlow<List<Batch>>(emptyList())
+    val availableBatches: StateFlow<List<Batch>> = _availableBatches.asStateFlow()
+
+    private val _isLoadingBatches = MutableStateFlow(false)
+    val isLoadingBatches: StateFlow<Boolean> = _isLoadingBatches.asStateFlow()
+
     val totalAmount: StateFlow<Double> = _orderBatchItems
         .map { items ->
             items.sumOf { item ->
@@ -60,6 +70,7 @@ class OrdersViewModel @Inject constructor(
     init {
         loadAllOrders()
     }
+
 
     // ===== FUNCIONES PARA LA LISTA DE ÓRDENES =====
 
@@ -282,5 +293,54 @@ class OrdersViewModel @Inject constructor(
 
     fun clearOrderState() {
         _orderBatchItems.value = emptyList()
+    }
+
+    // ===== FUNCIONES PARA FILTRAR BATCHES =====
+
+    /**
+     * Carga batches filtrados por:
+     * 1. Que pertenezcan a suppliers (userRoleId = 1)
+     * 2. Que tengan el mismo customSupply.supplyId que el especificado
+     * 3. Que tengan stock disponible
+     */
+    fun loadBatchesForSupply(supplyId: Int) {
+        viewModelScope.launch {
+            _isLoadingBatches.value = true
+            try {
+                // Obtener todos los batches
+                val allBatches = inventoryRepository.getBatches()
+
+                // Filtrar batches que cumplan las condiciones
+                val filtered = allBatches.filter { batch ->
+                    // Condición 1: El dueño debe ser supplier (roleId = 1)
+                    val isSupplier = batch.userRoleId == 1
+
+                    // Condición 2: El customSupply.supplyId debe coincidir
+                    val matchesSupply = batch.customSupply?.supplyId == supplyId
+
+                    // Condición 3: Debe tener stock disponible
+                    val hasStock = batch.stock > 0
+
+                    // Condición 4: No debe pertenecer al usuario actual (no puede ordenar a sí mismo)
+                    val isNotCurrentUser = batch.userId != getCurrentUserId()
+
+                    isSupplier && matchesSupply && hasStock && isNotCurrentUser
+                }
+
+                _availableBatches.value = filtered
+            } catch (e: Exception) {
+                Log.e("OrdersViewModel", "Error loading batches: ${e.message}")
+                _availableBatches.value = emptyList()
+            } finally {
+                _isLoadingBatches.value = false
+            }
+        }
+    }
+
+    /**
+     * Agrupa los batches disponibles por supplier
+     */
+    fun getBatchesGroupedBySupplier(): Map<Int, List<Batch>> {
+        return _availableBatches.value.groupBy { it.userId ?: 0 }
     }
 }

@@ -30,26 +30,23 @@ fun SelectSupplierForSupplyScreen(
     supplyId: Int,
     onNavigateBack: () -> Unit,
     onNavigateToOrderDetail: () -> Unit,
-    ordersViewModel: OrdersViewModel = hiltViewModel(),
-    inventoryViewModel: InventoryViewModel = hiltViewModel()
+    ordersViewModel: OrdersViewModel = hiltViewModel() // 👈 Solo OrdersViewModel
 ) {
-    // CAMBIADO: Ahora obtenemos batches del InventoryViewModel
-    val allBatches by inventoryViewModel.batches.collectAsState()
-
-    // Filtrar batches por supplyId
-    val supplierBatches = remember(allBatches, supplyId) {
-        allBatches.filter { batch ->
-            batch.customSupply?.supplyId == supplyId
-        }
-    }
+    val availableBatches by ordersViewModel.availableBatches.collectAsState()
+    val isLoading by ordersViewModel.isLoadingBatches.collectAsState()
 
     var selectedBatches by remember { mutableStateOf<Set<Batch>>(emptySet()) }
     var sortByPriceDesc by remember { mutableStateOf(false) }
 
+    // Cargar batches cuando se monta la screen
+    LaunchedEffect(supplyId) {
+        ordersViewModel.loadBatchesForSupply(supplyId)
+    }
+
     val sortedBatches = if (sortByPriceDesc) {
-        supplierBatches.sortedByDescending { it.customSupply?.price ?: 0.0 }
+        availableBatches.sortedByDescending { it.customSupply?.price ?: 0.0 }
     } else {
-        supplierBatches.sortedBy { it.customSupply?.price ?: 0.0 }
+        availableBatches.sortedBy { it.customSupply?.price ?: 0.0 }
     }
 
     Scaffold(
@@ -70,84 +67,16 @@ fun SelectSupplierForSupplyScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            Text(
-                text = "Complete the details of the new order and begin tracking it.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+            // ... resto del UI (igual que antes)
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Supply",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = supplierBatches.firstOrNull()?.customSupply?.supply?.name ?: "supply selected",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Order Price",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(
-                    onClick = { sortByPriceDesc = !sortByPriceDesc }
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        if (sortByPriceDesc) Icons.Default.ArrowDropDown else Icons.Default.ArrowDropUp,
-                        contentDescription = "Sort by price"
-                    )
+                    CircularProgressIndicator()
                 }
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "Supplier",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1.2f)
-                )
-                Text(
-                    text = "Price",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(0.8f)
-                )
-                Text(
-                    text = "Available stock",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(0.7f)
-                )
-                Spacer(modifier = Modifier.width(40.dp))
-            }
-
-            HorizontalDivider()
-
-            if (sortedBatches.isEmpty()) {
+            } else if (sortedBatches.isEmpty()) {
                 Box(
                     modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.Center

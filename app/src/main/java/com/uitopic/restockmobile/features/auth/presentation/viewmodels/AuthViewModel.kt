@@ -143,7 +143,7 @@ class AuthViewModel @Inject constructor(
             val request = SignUpRequest(
                 username = signUpState.username.trim(),
                 password = signUpState.password,
-                roleId = 1  // Restaurant admin
+                roleId = 2  // Restaurant admin
             )
 
             repository.signUp(request)

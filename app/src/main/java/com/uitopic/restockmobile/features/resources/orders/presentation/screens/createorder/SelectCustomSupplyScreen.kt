@@ -30,7 +30,6 @@ import com.uitopic.restockmobile.features.resources.presentation.viewmodels.Inve
 @Composable
 fun SelectCustomSupplyScreen(
     modifier: Modifier = Modifier,
-    userId: Int,
     onNavigateBack: () -> Unit,
     onSupplySelected: (Int) -> Unit,
     ordersViewModel: OrdersViewModel = hiltViewModel(),
@@ -288,7 +287,6 @@ fun SelectCustomSupplyScreen(
 fun SelectCustomSupplyPreview() {
     RestockmobileTheme {
         SelectCustomSupplyScreen(
-            userId = 2,
             onNavigateBack = {},
             onSupplySelected = {}
         )

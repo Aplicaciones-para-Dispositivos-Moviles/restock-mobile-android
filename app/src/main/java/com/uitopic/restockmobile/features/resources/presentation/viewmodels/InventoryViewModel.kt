@@ -2,6 +2,7 @@ package com.uitopic.restockmobile.features.resources.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.resources.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.domain.models.Supply
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class InventoryViewModel @Inject constructor(
-    private val repository: InventoryRepository
+    private val repository: InventoryRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _supplies = MutableStateFlow<List<Supply>>(emptyList())
@@ -124,5 +126,12 @@ class InventoryViewModel @Inject constructor(
         return _customSupplies.value.find { it.id == id }
     }
 
+    // Función auxiliar para obtener el ID del usuario actual
+    private fun getCurrentUserId(): Int {
+        return tokenManager.getUserId()
+    }
 
+    private fun getCurrentUserRoleId(): Int {
+        return tokenManager.getRoleId()
+    }
 }
