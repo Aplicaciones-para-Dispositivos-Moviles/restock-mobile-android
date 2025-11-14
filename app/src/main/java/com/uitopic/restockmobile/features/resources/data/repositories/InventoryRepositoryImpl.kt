@@ -130,6 +130,7 @@ class InventoryRepositoryImpl @Inject constructor(
             val dto = BatchDto(
                 id = null,
                 userId = batch.userId,
+                userRoleId = batch.userRoleId,
                 customSupplyId = batch.customSupply?.id,
                 stock = batch.stock,
                 expirationDate = batch.expirationDate
@@ -158,6 +159,7 @@ class InventoryRepositoryImpl @Inject constructor(
             val dto = BatchDto(
                 id = batch.id,
                 userId = batch.userId,
+                userRoleId = batch.userRoleId,
                 customSupplyId = batch.customSupply?.id,
                 stock = batch.stock,
                 expirationDate = batch.expirationDate

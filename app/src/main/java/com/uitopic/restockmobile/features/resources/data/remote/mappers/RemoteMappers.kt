@@ -22,6 +22,7 @@ fun BatchDto.toDomain(customSupplies: List<CustomSupply>? = null): Batch =
     Batch(
         id = id ?: "",
         userId = userId,
+        userRoleId = userRoleId,
         customSupply =
             customSupply?.toDomain()
                 ?: customSupplyId?.let { id ->
@@ -46,6 +47,7 @@ fun Batch.toDto(): BatchDto =
     BatchDto(
         id = id,
         userId = userId,
+        userRoleId = userRoleId,
         customSupplyId = customSupply?.id,
         stock = stock.toDouble(),
         expirationDate = expirationDate
