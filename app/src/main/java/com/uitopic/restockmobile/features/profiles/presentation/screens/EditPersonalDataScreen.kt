@@ -23,7 +23,15 @@ fun EditPersonalDataScreen(
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val state = viewModel.editPersonalDataState
+    val profileState = viewModel.profileState
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Load profile data if not already loaded
+    LaunchedEffect(Unit) {
+        if (profileState.profile == null) {
+            viewModel.loadProfile()
+        }
+    }
 
     LaunchedEffect(state.success) {
         if (state.success) {

@@ -92,6 +92,7 @@ fun ProfileDetailScreen(
                 state.profile != null -> {
                     ProfileContent(
                         profile = state.profile,
+                        username = viewModel.getUsername(),
                         isUploadingAvatar = viewModel.uploadAvatarState.isUploading,  // ← AGREGAR
                         onAvatarSelected = { uri -> viewModel.uploadAvatar(uri) },    // ← AGREGAR
                         onEditPersonal = onNavigateToEditPersonal,
@@ -109,6 +110,7 @@ fun ProfileDetailScreen(
 @OptIn(ExperimentalLayoutApi::class)
 private fun ProfileContent(
     profile: Profile,
+    username: String,
     isUploadingAvatar: Boolean,
     onAvatarSelected: (Uri) -> Unit,
     onEditPersonal: () -> Unit,
@@ -138,6 +140,13 @@ private fun ProfileContent(
             text = "${profile.firstName} ${profile.lastName}",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
+        )
+
+        // Username
+        Text(
+            text = "@$username",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(24.dp))
