@@ -22,20 +22,21 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val properties = Properties()
-        val localPropertiesFile = rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            properties.load(localPropertiesFile.inputStream())
+        // Load Cloudinary credentials from cloudinary.properties (shared across team)
+        val cloudinaryProperties = Properties()
+        val cloudinaryPropertiesFile = rootProject.file("cloudinary.properties")
+        if (cloudinaryPropertiesFile.exists()) {
+            cloudinaryProperties.load(cloudinaryPropertiesFile.inputStream())
         }
 
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME",
-            "\"${properties.getProperty("cloudinary.cloud.name", "")}\"")
+            "\"${cloudinaryProperties.getProperty("cloudinary.cloud.name", "")}\"")
         buildConfigField("String", "CLOUDINARY_API_KEY",
-            "\"${properties.getProperty("cloudinary.api.key", "")}\"")
+            "\"${cloudinaryProperties.getProperty("cloudinary.api.key", "")}\"")
         buildConfigField("String", "CLOUDINARY_API_SECRET",
-            "\"${properties.getProperty("cloudinary.api.secret", "")}\"")
+            "\"${cloudinaryProperties.getProperty("cloudinary.api.secret", "")}\"")
         buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET",
-            "\"${properties.getProperty("cloudinary.upload.preset", "")}\"")
+            "\"${cloudinaryProperties.getProperty("cloudinary.upload.preset", "")}\"")
     }
 
     buildTypes {
