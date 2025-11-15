@@ -2,6 +2,7 @@ package com.uitopic.restockmobile.features.resources.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.resources.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.domain.models.Supply
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class InventoryViewModel @Inject constructor(
-    private val repository: InventoryRepository
+    private val repository: InventoryRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _supplies = MutableStateFlow<List<Supply>>(emptyList())
@@ -35,8 +37,8 @@ class InventoryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _supplies.value = repository.getSupplies()
-                _customSupplies.value = repository.getCustomSupplies()
-                _batches.value = repository.getBatches()
+                _customSupplies.value = repository.getCustomSuppliesByUserId()
+                _batches.value = repository.getBatchesByUserId()
             } catch (t: Throwable) {
                 // TODO: manejar error (mostrar snackbar o log)
             }
@@ -49,7 +51,6 @@ class InventoryViewModel @Inject constructor(
                 repository.createBatch(batch)
                 _batches.value = repository.getBatches()
             } catch (t: Throwable) {
-                // Fallback local si no hay backend
                 _batches.value = _batches.value + batch
             }
         }
@@ -61,7 +62,6 @@ class InventoryViewModel @Inject constructor(
                 repository.updateBatch(updated)
                 _batches.value = repository.getBatches()
             } catch (t: Throwable) {
-                // Fallback local en modo desarrollo
                 _batches.value = _batches.value.map {
                     if (it.id == updated.id) updated else it
                 }
@@ -126,5 +126,12 @@ class InventoryViewModel @Inject constructor(
         return _customSupplies.value.find { it.id == id }
     }
 
+    // Función auxiliar para obtener el ID del usuario actual
+    fun getCurrentUserId(): Int {
+        return tokenManager.getUserId()
+    }
 
+    fun getCurrentUserRoleId(): Int {
+        return tokenManager.getRoleId()
+    }
 }

@@ -18,6 +18,9 @@ import com.uitopic.restockmobile.features.planning.presentation.navigation.plann
 import com.uitopic.restockmobile.features.profiles.presentation.navigation.profileNavGraph
 import com.uitopic.restockmobile.features.resources.presentation.navigation.inventoryNavGraph
 import com.uitopic.restockmobile.features.monitoring.presentation.navigation.monitoringNavGraph
+import com.uitopic.restockmobile.features.resources.orders.presentation.navigation.ordersNavGraph
+import com.uitopic.restockmobile.features.subscriptions.presentation.navigation.SubscriptionRoute
+import com.uitopic.restockmobile.features.subscriptions.presentation.navigation.subscriptionNavGraph
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -49,7 +52,15 @@ fun RestockApp(tokenManager: TokenManager) {
     // CONFIGURACIÓN DE INICIO DE LA APP
     // ==========================================
     val startDestination = if (tokenManager.isLoggedIn()) {
-        HomeRoute.Home.route
+        // Si el usuario ya está logueado, verificar su suscripción
+        val subscription = tokenManager.getSubscription()
+        if (subscription == 0) {
+            // Sin suscripción -> ir a selección de planes
+            SubscriptionRoute.SubscriptionGraph
+        } else {
+            // Con suscripción (1 o 2) -> ir directamente a Home
+            HomeRoute.Home.route
+        }
     } else {
         "auth_graph"
     }
@@ -60,12 +71,32 @@ fun RestockApp(tokenManager: TokenManager) {
         // Auth Graph (Sign In, Sign Up)
         authNavGraph(
             navController = navController,
-            onAuthSuccess = {
-                navController.navigate(HomeRoute.Home.route) {
-                    popUpTo("auth_graph") { inclusive = true }
+            onAuthSuccess = { subscription ->
+                // Redirigir según el valor de subscription
+                if (subscription == 0) {
+                    // Sin suscripción -> ir a selección de planes
+                    navController.navigate(SubscriptionRoute.SubscriptionGraph) {
+                        popUpTo("auth_graph") { inclusive = true }
+                    }
+                } else {
+                    // Con suscripción -> ir directamente a Home
+                    navController.navigate(HomeRoute.Home.route) {
+                        popUpTo("auth_graph") { inclusive = true }
+                    }
                 }
             }
         )
+
+        // Subscription Graph
+        subscriptionNavGraph(
+            navController = navController,
+            onSubscriptionComplete = {
+                navController.navigate(HomeRoute.Home.route) {
+                    popUpTo(SubscriptionRoute.SubscriptionGraph) { inclusive = true }
+                }
+            }
+        )
+
         // Home Screen
         homeNavGraph(navController)
         // Monitoring Graph (Sales)
@@ -83,5 +114,8 @@ fun RestockApp(tokenManager: TokenManager) {
         inventoryNavGraph(navController)
         // Planning (Recipes)
         planningNavGraph(navController)
+
+        // Resources - Orders
+        ordersNavGraph(navController, 1)
     }
 }

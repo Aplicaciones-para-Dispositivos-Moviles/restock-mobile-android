@@ -61,10 +61,11 @@ class AuthViewModel @Inject constructor(
             )
 
             repository.signIn(request)
-                .onSuccess {
+                .onSuccess { user ->
                     signInState = signInState.copy(
                         isLoading = false,
-                        success = true
+                        success = true,
+                        user = user
                     )
                 }
                 .onFailure { error ->
@@ -142,7 +143,7 @@ class AuthViewModel @Inject constructor(
             val request = SignUpRequest(
                 username = signUpState.username.trim(),
                 password = signUpState.password,
-                roleId = 1  // Restaurant admin
+                roleId = 2  // Restaurant admin
             )
 
             repository.signUp(request)

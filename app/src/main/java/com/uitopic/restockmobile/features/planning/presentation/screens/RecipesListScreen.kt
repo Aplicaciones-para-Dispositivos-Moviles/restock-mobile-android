@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -30,6 +31,19 @@ fun RecipesListScreen(
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val sortByPrice by viewModel.sortByPriceDesc.collectAsState()
+    var isRefreshing by remember { mutableStateOf(false) }
+
+    // Reload recipes when the screen is displayed
+    LaunchedEffect(Unit) {
+        viewModel.loadRecipes()
+    }
+
+    // Handle refresh state
+    LaunchedEffect(uiState) {
+        if (uiState !is RecipeUiState.Loading) {
+            isRefreshing = false
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -67,35 +81,46 @@ fun RecipesListScreen(
                 onQueryChange = { viewModel.onSearchQueryChange(it) }
             )
 
-            when (uiState) {
-                is RecipeUiState.Loading -> {
-                    LoadingState()
-                }
-                is RecipeUiState.Success -> {
-                    val recipes = (uiState as RecipeUiState.Success).recipes
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    isRefreshing = true
+                    viewModel.loadRecipes()
+                },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when (uiState) {
+                    is RecipeUiState.Loading -> {
+                        if (!isRefreshing) {
+                            LoadingState()
+                        }
+                    }
+                    is RecipeUiState.Success -> {
+                        val recipes = (uiState as RecipeUiState.Success).recipes
 
-                    if (recipes.isEmpty()) {
-                        EmptyRecipesState()
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(recipes) { recipe ->
-                                RecipeCard(
-                                    recipe = recipe,
-                                    onClick = { onRecipeClick(recipe.id ?: 0) }
-                                )
+                        if (recipes.isEmpty()) {
+                            EmptyRecipesState()
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(recipes) { recipe ->
+                                    RecipeCard(
+                                        recipe = recipe,
+                                        onClick = { onRecipeClick(recipe.id ?: 0) }
+                                    )
+                                }
                             }
                         }
                     }
-                }
-                is RecipeUiState.Error -> {
-                    ErrorState(
-                        message = (uiState as RecipeUiState.Error).message,
-                        onRetry = { viewModel.loadRecipes() }
-                    )
+                    is RecipeUiState.Error -> {
+                        ErrorState(
+                            message = (uiState as RecipeUiState.Error).message,
+                            onRetry = { viewModel.loadRecipes() }
+                        )
+                    }
                 }
             }
         }
