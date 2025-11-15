@@ -10,6 +10,7 @@ data class OrderDto(
     val adminRestaurantId: Int?,
     val supplierId: Int?,
     val supplier: UserDto?,
+    @SerializedName("date")
     val requestedDate: String?,
     val partiallyAccepted: Boolean?,
     val requestedProductsCount: Int?,
@@ -29,6 +30,7 @@ data class OrderBatchItemDto(
 data class OrderRequestDto(
     val adminRestaurantId: Int,
     val supplierId: Int,
+    @SerializedName("date")
     val requestedDate: String,
     val partiallyAccepted: Boolean = false,
     val requestedProductsCount: Int,

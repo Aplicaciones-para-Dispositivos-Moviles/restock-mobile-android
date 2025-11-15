@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.math.BigDecimal
+import java.math.RoundingMode
 import javax.inject.Inject
 
 @HiltViewModel
@@ -43,6 +45,9 @@ class OrdersViewModel @Inject constructor(
     private val _filteredOrders = MutableStateFlow<List<Order>>(emptyList())
     val filteredOrders: StateFlow<List<Order>> = _filteredOrders.asStateFlow()
 
+    // Cache de suppliers para evitar múltiples llamadas
+    private val _suppliersCache = MutableStateFlow<Map<Int, User>>(emptyMap())
+
     // ===== ESTADO PARA EL FLUJO DE CREACIÓN DE ÓRDENES =====
 
     private val _orderBatchItems = MutableStateFlow<List<OrderBatchItem>>(emptyList())
@@ -55,11 +60,14 @@ class OrdersViewModel @Inject constructor(
     private val _isLoadingBatches = MutableStateFlow(false)
     val isLoadingBatches: StateFlow<Boolean> = _isLoadingBatches.asStateFlow()
 
+    // CÁLCULO EXACTO DE TOTALES CON BigDecimal
     val totalAmount: StateFlow<Double> = _orderBatchItems
         .map { items ->
-            items.sumOf { item ->
-                (item.batch?.customSupply?.price ?: 0.0) * item.quantity
-            }
+            items.fold(BigDecimal.ZERO) { acc, item ->
+                val price = BigDecimal(item.batch?.customSupply?.price ?: 0.0)
+                val quantity = BigDecimal(item.quantity)
+                acc + (price * quantity)
+            }.setScale(2, RoundingMode.HALF_UP).toDouble()
         }
         .stateIn(
             scope = viewModelScope,
@@ -79,7 +87,8 @@ class OrdersViewModel @Inject constructor(
 
         if (_searchQuery.value.isNotBlank()) {
             filtered = filtered.filter { order ->
-                order.supplier.username.contains(_searchQuery.value, ignoreCase = true)
+                order.supplier.username.contains(_searchQuery.value, ignoreCase = true) ||
+                        order.supplier.profile?.businessName?.contains(_searchQuery.value, ignoreCase = true) == true
             }
         }
 
@@ -94,10 +103,11 @@ class OrdersViewModel @Inject constructor(
     fun loadAllOrders() {
         viewModelScope.launch {
             try {
-                _orders.value = repository.getAllOrders()
+                val loadedOrders = repository.getAllOrders()
+                _orders.value = enrichOrdersWithSupplierInfo(loadedOrders)
                 applyFilters()
             } catch (t: Throwable) {
-                // TODO: manejar error
+                Log.e("OrdersViewModel", "Error loading orders: ${t.message}", t)
             }
         }
     }
@@ -105,10 +115,11 @@ class OrdersViewModel @Inject constructor(
     fun loadOrdersByAdminRestaurantId(adminRestaurantId: Int) {
         viewModelScope.launch {
             try {
-                _orders.value = repository.getOrdersByAdminRestaurantId(adminRestaurantId)
+                val loadedOrders = repository.getOrdersByAdminRestaurantId(adminRestaurantId)
+                _orders.value = enrichOrdersWithSupplierInfo(loadedOrders)
                 applyFilters()
             } catch (t: Throwable) {
-                // TODO: manejar error
+                Log.e("OrdersViewModel", "Error loading orders by admin: ${t.message}", t)
             }
         }
     }
@@ -116,10 +127,52 @@ class OrdersViewModel @Inject constructor(
     fun loadOrdersBySupplierId(supplierId: Int) {
         viewModelScope.launch {
             try {
-                _orders.value = repository.getOrdersBySupplierId(supplierId)
+                val loadedOrders = repository.getOrdersBySupplierId(supplierId)
+                _orders.value = enrichOrdersWithSupplierInfo(loadedOrders)
                 applyFilters()
             } catch (t: Throwable) {
-                // TODO: manejar error
+                Log.e("OrdersViewModel", "Error loading orders by supplier: ${t.message}", t)
+            }
+        }
+    }
+
+    /**
+     * ✅ Enriquece las órdenes con información del supplier obtenida de los batches disponibles
+     */
+    private suspend fun enrichOrdersWithSupplierInfo(orders: List<Order>): List<Order> {
+        // Cargar todos los batches una sola vez
+        val allBatches = try {
+            inventoryRepository.getBatches()
+        } catch (e: Exception) {
+            Log.e("OrdersViewModel", "Error loading batches: ${e.message}")
+            emptyList()
+        }
+
+        // Crear un mapa de userId a batch para búsqueda rápida
+        val batchesByUserId = allBatches.groupBy { it.userId }
+
+        return orders.map { order ->
+            // Si la orden ya tiene supplier con profile completo, no hacer nada
+            if (order.supplier.profile != null &&
+                order.supplier.profile.businessName.isNotBlank()) {
+                return@map order
+            }
+
+            // Buscar un batch del supplier en nuestros batches cargados
+            val supplierBatches = batchesByUserId[order.supplierId]
+            val sampleBatch = supplierBatches?.firstOrNull()
+
+            if (sampleBatch != null) {
+                // Crear un User mejorado con la info disponible
+                order.copy(
+                    supplier = order.supplier.copy(
+                        username = order.supplier.username.takeIf { it.isNotBlank() }
+                            ?: "Supplier ${order.supplierId}"
+                    )
+                )
+            } else {
+                // Si no encontramos batches, dejar como está
+                order
             }
         }
     }
@@ -170,10 +223,13 @@ class OrdersViewModel @Inject constructor(
         _orderBatchItems.value = _orderBatchItems.value.filter { it.batchId != batchId }
     }
 
+    // CÁLCULO EXACTO con BigDecimal
     fun calculateTotal(): Double {
-        return _orderBatchItems.value.sumOf { item ->
-            (item.batch?.customSupply?.price ?: 0.0) * item.quantity
-        }
+        return _orderBatchItems.value.fold(BigDecimal.ZERO) { acc, item ->
+            val price = BigDecimal(item.batch?.customSupply?.price ?: 0.0)
+            val quantity = BigDecimal(item.quantity)
+            acc + (price * quantity)
+        }.setScale(2, RoundingMode.HALF_UP).toDouble()
     }
 
     // Función auxiliar para obtener el ID del usuario actual
@@ -246,7 +302,15 @@ class OrdersViewModel @Inject constructor(
                 val createdOrder = repository.createOrder(order)
 
                 if (createdOrder != null) {
-                    _orders.value = listOf(createdOrder) + _orders.value
+                    // Recargar la orden completa desde el servidor para obtener datos actualizados
+                    val completeOrder = repository.getOrderById(createdOrder.id)
+
+                    if (completeOrder != null) {
+                        _orders.value = listOf(completeOrder) + _orders.value
+                    } else {
+                        _orders.value = listOf(createdOrder) + _orders.value
+                    }
+
                     applyFilters()
                     clearOrderState()
                     onSuccess()
@@ -296,13 +360,7 @@ class OrdersViewModel @Inject constructor(
     }
 
     // ===== FUNCIONES PARA FILTRAR BATCHES =====
-
-    /**
-     * Carga batches filtrados por:
-     * 1. Que pertenezcan a suppliers (userRoleId = 1)
-     * 2. Que tengan el mismo customSupply.supplyId que el especificado
-     * 3. Que tengan stock disponible
-     */
+ 
     fun loadBatchesForSupply(supplyId: Int) {
         viewModelScope.launch {
             _isLoadingBatches.value = true
@@ -315,7 +373,7 @@ class OrdersViewModel @Inject constructor(
                     // Condición 1: El dueño debe ser supplier (roleId = 1)
                     val isSupplier = batch.userRoleId == 1
 
-                    // Condición 2: El customSupply.supplyId debe coincidir
+                    // Condición 2: El customSupply.supplyId debe coincidir EXACTAMENTE
                     val matchesSupply = batch.customSupply?.supplyId == supplyId
 
                     // Condición 3: Debe tener stock disponible
@@ -324,9 +382,18 @@ class OrdersViewModel @Inject constructor(
                     // Condición 4: No debe pertenecer al usuario actual (no puede ordenar a sí mismo)
                     val isNotCurrentUser = batch.userId != getCurrentUserId()
 
-                    isSupplier && matchesSupply && hasStock && isNotCurrentUser
+                    // Todas las condiciones deben cumplirse
+                    val meetsAllConditions = isSupplier && matchesSupply && hasStock && isNotCurrentUser
+
+                    // Log para debugging
+                    if (matchesSupply) {
+                        Log.d("OrdersViewModel", "Batch ${batch.id}: supplier=$isSupplier, supplyMatch=$matchesSupply (${batch.customSupply?.supplyId} == $supplyId), hasStock=$hasStock, notCurrentUser=$isNotCurrentUser")
+                    }
+
+                    meetsAllConditions
                 }
 
+                Log.d("OrdersViewModel", "Filtered ${filtered.size} batches for supplyId $supplyId from ${allBatches.size} total batches")
                 _availableBatches.value = filtered
             } catch (e: Exception) {
                 Log.e("OrdersViewModel", "Error loading batches: ${e.message}")
@@ -342,5 +409,14 @@ class OrdersViewModel @Inject constructor(
      */
     fun getBatchesGroupedBySupplier(): Map<Int, List<Batch>> {
         return _availableBatches.value.groupBy { it.userId ?: 0 }
+    }
+ 
+    fun getSupplierBusinessName(batch: Batch): String {
+        // Aquí deberías tener una forma de obtener el User completo
+        // Por ahora, retornamos un placeholder basado en el userId
+        // TODO: Implementar carga de User/Profile completo
+        return batch.customSupply?.supply?.name?.let { supplyName ->
+            "Supplier #${batch.userId}"
+        } ?: "Unknown Supplier"
     }
 }

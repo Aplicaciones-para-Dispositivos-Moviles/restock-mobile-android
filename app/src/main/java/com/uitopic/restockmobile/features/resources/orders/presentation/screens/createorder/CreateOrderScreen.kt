@@ -158,8 +158,9 @@ fun CreateOrderScreen(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
+
                     Text(
-                        text = "S/ ${String.format("%.0f", totalAmount)}",
+                        text = "S/ ${String.format("%.2f", totalAmount)}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )

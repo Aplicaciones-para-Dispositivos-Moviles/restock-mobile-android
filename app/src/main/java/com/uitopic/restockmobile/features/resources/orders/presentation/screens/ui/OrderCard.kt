@@ -1,5 +1,6 @@
 package com.uitopic.restockmobile.features.resources.orders.presentation.screens.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -20,19 +22,25 @@ import androidx.compose.ui.unit.dp
 import com.uitopic.restockmobile.features.resources.orders.domain.models.Order
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderState
 
-
 @Composable
 fun OrderCard(order: Order,
               onOrderClick: () -> Unit = {}) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onOrderClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        onClick =  onOrderClick
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header: Proveedor + Estado
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Header: Business Name y Estado
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -40,18 +48,18 @@ fun OrderCard(order: Order,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = order.supplier?.profile?.businessName ?: "Proveedor desconocido",
+                        text = order.supplier.profile?.businessName?.takeIf { it.isNotBlank() }
+                            ?: "Supplier #${order.supplierId}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = order.supplier?.username ?: "",
+                        text = "@${order.supplier.username}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                // Badge de estado
                 Surface(
                     color = when (order.state) {
                         OrderState.PREPARING -> MaterialTheme.colorScheme.primary
@@ -70,9 +78,13 @@ fun OrderCard(order: Order,
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Información de la orden
+            HorizontalDivider()
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Detalles de la orden
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -85,7 +97,8 @@ fun OrderCard(order: Order,
                     )
                     Text(
                         text = order.requestedDate,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
                     )
                 }
 
@@ -96,31 +109,25 @@ fun OrderCard(order: Order,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = order.requestedProductsCount.toString(),
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "${order.requestedProductsCount}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Total
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Total",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "S/ ${String.format("%.2f", order.totalPrice)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "Total",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "S/ ${String.format("%.2f", order.totalPrice)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }
