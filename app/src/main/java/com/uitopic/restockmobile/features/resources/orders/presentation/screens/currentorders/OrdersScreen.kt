@@ -24,23 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.uitopic.restockmobile.features.auth.domain.models.User
 import com.uitopic.restockmobile.features.home.presentation.components.RestockScaffold
-import com.uitopic.restockmobile.features.profiles.domain.models.Profile
-import com.uitopic.restockmobile.features.resources.domain.models.Batch
-import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
-import com.uitopic.restockmobile.features.resources.domain.models.Supply
-import com.uitopic.restockmobile.features.resources.domain.models.UnitModel
-import com.uitopic.restockmobile.features.resources.orders.domain.models.Order
-import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderBatchItem
-import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderSituation
-import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderState
 import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
 import com.uitopic.restockmobile.shared.presentation.components.ItemSearchBar
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.uitopic.restockmobile.features.resources.orders.presentation.screens.ui.OrderCard
@@ -100,105 +89,6 @@ fun OrdersContent(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val filteredOrders by viewModel.filteredOrders.collectAsState()
     val allOrders by viewModel.orders.collectAsState()
-
-
-    // Ordenes de ejemplo (temporal)
-    /* val sampleOrders = remember {
-        listOf(
-            Order(
-                id = 1,
-                adminRestaurantId = 1,
-                supplierId = 100,
-                supplier = User(
-                    id = 100,
-                    username = "Proveedor Lima",
-                    roleId = 2,
-                    profile = Profile(
-                        id = 1,
-                        firstName = "Carlos",
-                        lastName = "Mendoza",
-                        email = "contacto@proveedorlima.com",
-                        phone = "+51 987 654 321",
-                        address = "Av. Industrial 123, Lima",
-                        country = "Peru",
-                        avatar = null,
-                        businessName = "Proveedor Lima",
-                        businessAddress = "Av. Industrial 123, Cercado de Lima",
-                        description = "Distribuidor mayorista de alimentos",
-                        categories = emptyList()
-                    )
-                ),
-                requestedDate = "2025-11-02",
-                partiallyAccepted = false,
-                requestedProductsCount = 2,
-                totalPrice = 150.50,
-                state = OrderState.PREPARING,
-                situation = OrderSituation.PENDING,
-                batchItems = listOf(
-                    OrderBatchItem(
-                        batchId = 1,
-                        quantity = 10.0,
-                        accepted = true,
-                        batch = Batch(
-                            id = "B001",
-                            userId = 1,
-                            stock = 20.0,
-                            expirationDate = "2025-12-30",
-                            customSupply = CustomSupply(
-                                id = 1,
-                                minStock = 5,
-                                maxStock = 50,
-                                price = 15.50,
-                                userId = 1,
-                                supplyId = 11,
-                                currencyCode = "USD",
-                                description = "Aceite vegetal de 1L",
-                                unit = UnitModel(name = "Litro", abbreviation = "L"),
-                                supply = Supply(
-                                    id = 11,
-                                    name = "Aceite vegetal",
-                                    description = "Aceite refinado para cocina",
-                                    perishable = false,
-                                    category = "Alimentos"
-                                )
-                            )
-                        )
-                    )
-                )
-            ),
-            Order(
-                id= 2,
-                adminRestaurantId = 1,
-                supplierId = 101,
-                supplier = User(
-                    id = 101,
-                    username = "Proveedor Cusco",
-                    roleId = 2,
-                    profile = Profile(
-                        id = 2,
-                        firstName = "María",
-                        lastName = "Torres",
-                        email = "contacto@proveedorcusco.com",
-                        phone = "+51 956 789 123",
-                        address = "Av. Sol 456, Cusco",
-                        country = "Peru",
-                        avatar = null,
-                        businessName = "Proveedor Cusco",
-                        businessAddress = "Av. Sol 456, Cusco",
-                        description = "Distribuidor regional de insumos",
-                        categories = emptyList()
-                    )
-                ),
-                requestedDate = "2025-10-20",
-                partiallyAccepted = true,
-                requestedProductsCount = 1,
-                totalPrice = 80.0,
-                state = OrderState.DELIVERED,
-                situation = OrderSituation.APPROVED,
-                batchItems = emptyList()
-            )
-        )
-    } */
 
     val displayOrders = if (searchQuery.isNotBlank()) {
         filteredOrders

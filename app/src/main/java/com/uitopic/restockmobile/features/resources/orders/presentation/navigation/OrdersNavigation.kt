@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -17,7 +16,7 @@ import com.uitopic.restockmobile.features.resources.orders.presentation.screens.
 import com.uitopic.restockmobile.features.resources.orders.presentation.screens.createorder.SelectCustomSupplyScreen
 
 import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
-import com.uitopic.restockmobile.features.resources.presentation.viewmodels.InventoryViewModel
+import com.uitopic.restockmobile.features.resources.inventory.presentation.viewmodels.InventoryViewModel
 
 sealed class OrdersRoute(val route: String) {
     data object Orders : OrdersRoute("orders")
@@ -48,7 +47,7 @@ fun NavGraphBuilder.ordersNavGraph(
 
         OrdersScreen(
             viewModel = ordersViewModel,
-            userName = "",
+            userName = ordersViewModel.getCurrentUsername() ?: "username123",
             userEmail = "",
             userAvatar = "",
             onNavigateToProfile = {

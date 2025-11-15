@@ -9,7 +9,6 @@ import com.uitopic.restockmobile.features.planning.data.remote.datasources.Recip
 import com.uitopic.restockmobile.features.planning.data.remote.models.AddSupplyToRecipeDto
 import com.uitopic.restockmobile.features.planning.data.remote.models.CreateRecipeDto
 import com.uitopic.restockmobile.features.planning.data.remote.models.RecipeDto
-import com.uitopic.restockmobile.features.planning.data.remote.models.RecipeSupplyDto
 import com.uitopic.restockmobile.features.planning.data.remote.models.UpdateRecipeDto
 import com.uitopic.restockmobile.features.planning.data.remote.models.UpdateRecipeSupplyDto
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeDetailUiState
@@ -17,6 +16,7 @@ import com.uitopic.restockmobile.features.planning.presentation.states.RecipeFor
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeFormState
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeSupplyItem
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeUiState
+import com.uitopic.restockmobile.features.resources.inventory.domain.repositories.InventoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,7 +29,7 @@ class RecipesViewModel @Inject constructor(
     private val remoteDataSource: RecipeRemoteDataSource,
     private val imageUploadRepository: ImageUploadRepository,
     private val tokenManager: TokenManager,
-    private val inventoryRepository: com.uitopic.restockmobile.features.resources.domain.repositories.InventoryRepository
+    private val inventoryRepository: InventoryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<RecipeUiState>(RecipeUiState.Loading)

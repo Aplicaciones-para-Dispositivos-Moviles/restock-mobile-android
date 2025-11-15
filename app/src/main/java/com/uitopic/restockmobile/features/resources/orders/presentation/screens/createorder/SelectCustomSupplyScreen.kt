@@ -9,22 +9,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
 import com.uitopic.restockmobile.features.resources.orders.presentation.screens.ui.SupplySearchCard
 import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
-import com.uitopic.restockmobile.features.resources.presentation.viewmodels.InventoryViewModel
+import com.uitopic.restockmobile.features.resources.inventory.presentation.viewmodels.InventoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

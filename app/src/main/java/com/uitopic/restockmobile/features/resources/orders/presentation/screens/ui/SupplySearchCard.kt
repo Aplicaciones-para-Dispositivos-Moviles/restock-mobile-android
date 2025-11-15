@@ -17,7 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
+import com.uitopic.restockmobile.features.resources.inventory.domain.models.CustomSupply
 
 
 @Composable
