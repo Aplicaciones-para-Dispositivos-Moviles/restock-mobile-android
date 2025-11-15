@@ -127,11 +127,11 @@ class InventoryViewModel @Inject constructor(
     }
 
     // Función auxiliar para obtener el ID del usuario actual
-    private fun getCurrentUserId(): Int {
+    fun getCurrentUserId(): Int {
         return tokenManager.getUserId()
     }
 
-    private fun getCurrentUserRoleId(): Int {
+    fun getCurrentUserRoleId(): Int {
         return tokenManager.getRoleId()
     }
 }

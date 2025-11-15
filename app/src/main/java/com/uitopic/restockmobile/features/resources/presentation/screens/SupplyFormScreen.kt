@@ -154,7 +154,7 @@ fun SupplyFormScreen(
                     if (selectedSupply != null && minStock.isNotBlank() && maxStock.isNotBlank()) {
                         val newCustom = CustomSupply(
                             id = existingSupply?.id ?: 0,
-                            userId = existingSupply?.userId ?: 1,
+                            userId = existingSupply?.userId ?: viewModel.getCurrentUserId(),
                             minStock = minStock.toInt(),
                             maxStock = maxStock.toInt(),
                             price = 0.0, // Always send 0

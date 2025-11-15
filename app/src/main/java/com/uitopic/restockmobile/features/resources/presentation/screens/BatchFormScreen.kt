@@ -142,8 +142,8 @@ fun BatchFormScreen(
 
                         val newBatch = Batch(
                             id = existingBatch?.id ?: "",
-                            userId = existingBatch?.userId ?: 1,
-                            userRoleId = existingBatch?.userRoleId ?: 1,
+                            userId = existingBatch?.userId ?: viewModel.getCurrentUserId(),
+                            userRoleId = existingBatch?.userRoleId ?: viewModel.getCurrentUserRoleId(),
                             customSupply = selectedCustom!!,
                             stock = stock.toDouble(),
                             expirationDate = finalExpirationDate

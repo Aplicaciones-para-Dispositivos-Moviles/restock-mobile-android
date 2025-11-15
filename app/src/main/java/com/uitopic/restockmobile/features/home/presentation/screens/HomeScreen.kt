@@ -11,13 +11,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.uitopic.restockmobile.features.home.presentation.components.QuickActionCard
 import com.uitopic.restockmobile.features.home.presentation.components.RestockScaffold
+import com.uitopic.restockmobile.features.home.presentation.viewmodels.HomeViewModel
 
 @Composable
 fun HomeScreen(
-    userName: String = "User",
-    userEmail: String = "user@example.com",
+    viewModel: HomeViewModel = hiltViewModel(),
     userAvatar: String = "",
     onNavigateToProfile: () -> Unit,
     onNavigateToInventory: () -> Unit,
@@ -26,6 +27,9 @@ fun HomeScreen(
     onLogout: () -> Unit,
     onNavigateToOrders: () -> Unit
 ) {
+    val userName = viewModel.getUsername()
+    val userEmail = viewModel.userEmail
+
     RestockScaffold(
         title = "Restock",
         userName = userName,

@@ -24,9 +24,14 @@ fun EditBusinessDataScreen(
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val state = viewModel.editBusinessDataState
+    val profileState = viewModel.profileState
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
+        // Load profile data if not already loaded
+        if (profileState.profile == null) {
+            viewModel.loadProfile()
+        }
         viewModel.loadAllCategories()
     }
 

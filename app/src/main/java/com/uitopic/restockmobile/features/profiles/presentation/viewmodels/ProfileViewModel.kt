@@ -469,7 +469,7 @@ class ProfileViewModel @Inject constructor(
                 confirmPassword = changePasswordState.confirmPassword
             )
 
-            repository.changePassword("1", request)
+            repository.changePassword(tokenManager.getUserId().toString(), request)
                 .onSuccess {
                     changePasswordState = ChangePasswordUiState(success = true)
                 }
@@ -528,7 +528,7 @@ class ProfileViewModel @Inject constructor(
                 success = false
             )
 
-            repository.deleteProfile("1")
+            repository.deleteProfile(tokenManager.getUserId().toString())
                 .onSuccess {
                     deleteAccountState = deleteAccountState.copy(
                         isLoading = false,
@@ -559,5 +559,10 @@ class ProfileViewModel @Inject constructor(
 
     fun resetDeleteAccountSuccess() {
         deleteAccountState = deleteAccountState.copy(success = false)
+    }
+
+    // GET USERNAME FROM TOKEN MANAGER
+    fun getUsername(): String {
+        return tokenManager.getUsername() ?: ""
     }
 }
