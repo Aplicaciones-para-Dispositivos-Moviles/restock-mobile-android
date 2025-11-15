@@ -419,4 +419,8 @@ class OrdersViewModel @Inject constructor(
             "Supplier #${batch.userId}"
         } ?: "Unknown Supplier"
     }
+
+    fun getCurrentUsername(): String? {
+        return tokenManager.getUsername()
+    }
 }

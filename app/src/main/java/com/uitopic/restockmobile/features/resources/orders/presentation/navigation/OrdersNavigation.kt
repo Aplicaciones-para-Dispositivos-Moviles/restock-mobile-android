@@ -47,7 +47,7 @@ fun NavGraphBuilder.ordersNavGraph(
 
         OrdersScreen(
             viewModel = ordersViewModel,
-            userName = "",
+            userName = ordersViewModel.getCurrentUsername() ?: "username123",
             userEmail = "",
             userAvatar = "",
             onNavigateToProfile = {
