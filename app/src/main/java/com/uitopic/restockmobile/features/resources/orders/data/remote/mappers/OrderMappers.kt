@@ -1,11 +1,8 @@
 package com.uitopic.restockmobile.features.resources.orders.data.remote.mappers
 
 
-import com.uitopic.restockmobile.features.auth.data.remote.mappers.toDomain
-import com.uitopic.restockmobile.features.auth.domain.models.User
 import com.uitopic.restockmobile.features.profiles.data.remote.mappers.toDomain
-import com.uitopic.restockmobile.features.profiles.domain.models.Profile
-import com.uitopic.restockmobile.features.resources.data.remote.mappers.toDomain
+import com.uitopic.restockmobile.features.resources.inventory.data.remote.mappers.toDomain
 import com.uitopic.restockmobile.features.resources.orders.data.remote.models.OrderBatchItemDto
 import com.uitopic.restockmobile.features.resources.orders.data.remote.models.OrderBatchItemRequestDto
 import com.uitopic.restockmobile.features.resources.orders.data.remote.models.OrderDto

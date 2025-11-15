@@ -9,8 +9,8 @@ import androidx.lifecycle.viewModelScope
 import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.auth.domain.models.User
 import com.uitopic.restockmobile.features.profiles.domain.models.Profile
-import com.uitopic.restockmobile.features.resources.domain.models.Batch
-import com.uitopic.restockmobile.features.resources.domain.repositories.InventoryRepository
+import com.uitopic.restockmobile.features.resources.inventory.domain.models.Batch
+import com.uitopic.restockmobile.features.resources.inventory.domain.repositories.InventoryRepository
 import com.uitopic.restockmobile.features.resources.orders.domain.models.Order
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderBatchItem
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderSituation

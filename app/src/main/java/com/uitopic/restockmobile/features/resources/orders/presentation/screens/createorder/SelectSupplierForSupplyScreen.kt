@@ -6,8 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,10 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.uitopic.restockmobile.features.resources.domain.models.Batch
+import com.uitopic.restockmobile.features.resources.inventory.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
-import com.uitopic.restockmobile.features.resources.presentation.viewmodels.InventoryViewModel
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 
 @OptIn(ExperimentalMaterial3Api::class)

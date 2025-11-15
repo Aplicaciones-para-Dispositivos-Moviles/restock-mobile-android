@@ -16,7 +16,7 @@ import com.uitopic.restockmobile.features.home.presentation.navigation.HomeRoute
 import com.uitopic.restockmobile.features.home.presentation.navigation.homeNavGraph
 import com.uitopic.restockmobile.features.planning.presentation.navigation.planningNavGraph
 import com.uitopic.restockmobile.features.profiles.presentation.navigation.profileNavGraph
-import com.uitopic.restockmobile.features.resources.presentation.navigation.inventoryNavGraph
+import com.uitopic.restockmobile.features.resources.inventory.presentation.navigation.inventoryNavGraph
 import com.uitopic.restockmobile.features.monitoring.presentation.navigation.monitoringNavGraph
 import com.uitopic.restockmobile.features.resources.orders.presentation.navigation.ordersNavGraph
 import com.uitopic.restockmobile.features.subscriptions.presentation.navigation.SubscriptionRoute

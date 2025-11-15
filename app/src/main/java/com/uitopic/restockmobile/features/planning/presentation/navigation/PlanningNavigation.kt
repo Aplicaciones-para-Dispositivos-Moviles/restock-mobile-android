@@ -13,7 +13,7 @@ import androidx.navigation.navigation
 import com.uitopic.restockmobile.features.planning.presentation.screens.RecipeDetailScreen
 import com.uitopic.restockmobile.features.planning.presentation.screens.RecipeFormScreen
 import com.uitopic.restockmobile.features.planning.presentation.screens.RecipesListScreen
-import com.uitopic.restockmobile.features.resources.presentation.viewmodels.InventoryViewModel
+import com.uitopic.restockmobile.features.resources.inventory.presentation.viewmodels.InventoryViewModel
 
 // Navigation Routes
 sealed class PlanningRoute(val route: String) {

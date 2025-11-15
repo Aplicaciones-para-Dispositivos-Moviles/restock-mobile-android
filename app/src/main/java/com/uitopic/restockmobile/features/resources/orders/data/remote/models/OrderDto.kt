@@ -3,7 +3,7 @@ package com.uitopic.restockmobile.features.resources.orders.data.remote.models
 
 import com.google.gson.annotations.SerializedName
 import com.uitopic.restockmobile.core.auth.remote.models.UserDto
-import com.uitopic.restockmobile.features.resources.data.remote.models.BatchDto
+import com.uitopic.restockmobile.features.resources.inventory.data.remote.models.BatchDto
 
 data class OrderDto(
     val id: Int?,

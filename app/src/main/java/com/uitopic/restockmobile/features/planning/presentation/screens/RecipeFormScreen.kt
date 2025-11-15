@@ -25,8 +25,7 @@ import com.uitopic.restockmobile.features.planning.presentation.states.RecipeFor
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeFormState
 import com.uitopic.restockmobile.features.planning.presentation.states.RecipeSupplyItem
 import com.uitopic.restockmobile.features.planning.presentation.viewmodels.RecipesViewModel
-import com.uitopic.restockmobile.features.resources.domain.models.CustomSupply
-import kotlinx.coroutines.launch
+import com.uitopic.restockmobile.features.resources.inventory.domain.models.CustomSupply
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
