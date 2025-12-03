@@ -24,10 +24,12 @@ import java.math.RoundingMode
 fun OrderBatchItemCard(
     item: OrderBatchItem,
     onQuantityChange: (Double) -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    supplierBusinessName: String? = null
 ) {
     val supplyName = item.batch?.customSupply?.supply?.name ?: "Unknown"
-    val supplierName = "Supplier ${item.batch?.userId ?: "?"}"
+    val supplierName = supplierBusinessName
+        ?: "Supplier #${item.batch?.userId ?: "?"}"
     val price = item.batch?.customSupply?.price ?: 0.0
     val availableStock = item.batch?.stock ?: 0.0
     val unit = item.batch?.customSupply?.unit?.abbreviation ?: "u"

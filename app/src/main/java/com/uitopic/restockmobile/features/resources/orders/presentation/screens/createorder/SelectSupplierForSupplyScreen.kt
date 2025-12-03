@@ -15,7 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.uitopic.restockmobile.features.profiles.domain.models.Profile
 import com.uitopic.restockmobile.features.resources.inventory.domain.models.Batch
+import com.uitopic.restockmobile.features.resources.inventory.presentation.viewmodels.InventoryViewModel
 import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
 
@@ -26,10 +28,26 @@ fun SelectSupplierForSupplyScreen(
     supplyId: Int,
     onNavigateBack: () -> Unit,
     onNavigateToOrderDetail: () -> Unit,
-    ordersViewModel: OrdersViewModel = hiltViewModel()
+    ordersViewModel: OrdersViewModel = hiltViewModel(),
+    inventoryViewModel: InventoryViewModel = hiltViewModel()
 ) {
     val availableBatches by ordersViewModel.availableBatches.collectAsState()
     val isLoading by ordersViewModel.isLoadingBatches.collectAsState()
+
+    val customSupplies by inventoryViewModel.customSupplies.collectAsState()
+    val selectedSupply = remember(customSupplies, supplyId) {
+        customSupplies.find { it.supplyId == supplyId }
+    }
+    // ← EXTRAER NOMBRE DEL SUPPLY
+    val supplyName = selectedSupply?.supply?.name
+        ?: selectedSupply?.description
+        ?: "Supply #$supplyId"
+
+    val supplyCategory = selectedSupply?.supply?.category ?: "No category"
+    val supplyUnit = selectedSupply?.unit?.name ?: "units"
+
+    val isLoadingSuppliers by ordersViewModel.isLoadingSuppliers.collectAsState()
+    val suppliersProfileCache by ordersViewModel.suppliersProfileCache.collectAsState()
 
     var selectedBatches by remember { mutableStateOf<Set<Batch>>(emptySet()) }
 
@@ -38,7 +56,8 @@ fun SelectSupplierForSupplyScreen(
         ordersViewModel.loadBatchesForSupply(supplyId)
     }
 
-    // ✅ Agrupar batches por supplier
+
+    //  Agrupar batches por supplier
     val batchesGroupedBySupplier = remember(availableBatches) {
         availableBatches.groupBy { it.userId ?: 0 }
     }
@@ -61,6 +80,47 @@ fun SelectSupplierForSupplyScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Inventory2,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Requesting",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = supplyName,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = "$supplyUnit • $supplyCategory",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
             Text(
                 text = "Select one or more suppliers for this supply",
                 style = MaterialTheme.typography.bodyMedium,
@@ -77,7 +137,9 @@ fun SelectSupplierForSupplyScreen(
                 }
             } else if (availableBatches.isEmpty()) {
                 Box(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -98,7 +160,7 @@ fun SelectSupplierForSupplyScreen(
                     }
                 }
             } else {
-                // ✅ Header con información de columnas
+                // Header con información de columnas
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -139,9 +201,16 @@ fun SelectSupplierForSupplyScreen(
                 ) {
                     items(availableBatches) { batch ->
 
+                        // OBTENER PROFILE DEL CACHÉ
+                        val supplierProfile = suppliersProfileCache[batch.userId]
+                        val supplierName = supplierProfile?.businessName?.takeIf { it.isNotBlank() }
+                            ?: "Supplier #${batch.userId}"
+
+
                         SupplierBatchRow(
                             batch = batch,
-                            supplierName = ordersViewModel.getSupplierBusinessName(batch),
+                            supplierName = supplierName,
+                            supplierProfile = supplierProfile,
                             isSelected = selectedBatches.contains(batch),
                             onToggleSelection = {
                                 selectedBatches = if (selectedBatches.contains(batch)) {
@@ -219,6 +288,7 @@ fun SelectSupplierForSupplyScreen(
 fun SupplierBatchRow(
     batch: Batch,
     supplierName: String,
+    supplierProfile: Profile?,
     isSelected: Boolean,
     onToggleSelection: () -> Unit
 ) {
@@ -255,6 +325,17 @@ fun SupplierBatchRow(
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
+
+                supplierProfile?.let { profile ->
+                    Text(
+                        text = profile.email.takeIf { it.isNotBlank() }
+                            ?: profile.phone.takeIf { it.isNotBlank() }
+                            ?: "No contact info",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 Text(
                     text = "Batch #${batch.id}",
                     style = MaterialTheme.typography.bodySmall,
