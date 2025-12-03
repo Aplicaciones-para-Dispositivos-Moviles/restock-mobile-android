@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.features.auth.domain.models.User
 import com.uitopic.restockmobile.features.profiles.domain.models.Profile
+import com.uitopic.restockmobile.features.profiles.domain.repositories.ProfileRepository
 import com.uitopic.restockmobile.features.resources.inventory.domain.models.Batch
 import com.uitopic.restockmobile.features.resources.inventory.domain.repositories.InventoryRepository
 import com.uitopic.restockmobile.features.resources.orders.domain.models.Order
@@ -17,6 +18,9 @@ import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderSi
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderState
 import com.uitopic.restockmobile.features.resources.orders.domain.repositories.OrdersRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,14 +30,21 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.text.SimpleDateFormat
+import java.util.Locale
 import javax.inject.Inject
+
+private const val ROLE_SUPPLIER = 1
+private const val ROLE_ADMIN_RESTAURANT = 2
 
 @HiltViewModel
 class OrdersViewModel @Inject constructor(
     private val repository: OrdersRepository,
     private val inventoryRepository: InventoryRepository,
+    private val profileRepository: ProfileRepository,
     private val tokenManager: TokenManager
 ) : ViewModel() {
+
 
     // ===== ESTADO PARA LA LISTA DE ÓRDENES =====
     private val _orders = MutableStateFlow<List<Order>>(emptyList())
@@ -60,6 +71,14 @@ class OrdersViewModel @Inject constructor(
     private val _isLoadingBatches = MutableStateFlow(false)
     val isLoadingBatches: StateFlow<Boolean> = _isLoadingBatches.asStateFlow()
 
+    // Cache de PROFILES
+    private val _suppliersProfileCache = MutableStateFlow<Map<Int, Profile>>(emptyMap())
+    val suppliersProfileCache: StateFlow<Map<Int, Profile>> = _suppliersProfileCache.asStateFlow()
+
+    private val _isLoadingSuppliers = MutableStateFlow(false)
+    val isLoadingSuppliers: StateFlow<Boolean> = _isLoadingSuppliers.asStateFlow()
+
+
     // CÁLCULO EXACTO DE TOTALES CON BigDecimal
     val totalAmount: StateFlow<Double> = _orderBatchItems
         .map { items ->
@@ -76,7 +95,7 @@ class OrdersViewModel @Inject constructor(
         )
 
     init {
-        loadAllOrders()
+        loadOrdersForCurrentUser()
     }
 
 
@@ -112,6 +131,45 @@ class OrdersViewModel @Inject constructor(
         }
     }
 
+
+
+    fun loadOrdersForCurrentUser() {
+        viewModelScope.launch {
+            try {
+                val currentUserId = getCurrentUserId()
+                val currentRoleId = getCurrentUserRoleId()
+
+                Log.d("OrdersViewModel", "Loading orders for userId=$currentUserId, roleId=$currentRoleId")
+
+                val loadedOrders = when (currentRoleId) {
+                    ROLE_ADMIN_RESTAURANT -> repository.getOrdersByAdminRestaurantId(currentUserId)
+                    ROLE_SUPPLIER -> repository.getOrdersBySupplierId(currentUserId)
+                    else -> repository.getAllOrders() // o emptyList()
+                }
+
+                Log.d("OrdersViewModel", "Loaded ${loadedOrders.size} orders from backend")
+
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+                val sortedOrders = loadedOrders.sortedByDescending { order ->
+                    val time = try {
+                        dateFormat.parse(order.requestedDate)?.time
+                    } catch (e: Exception) {
+                        Log.w("OrdersViewModel", "Error parsing date: ${order.requestedDate}", e)
+                        null
+                    }
+                    time ?: Long.MIN_VALUE
+                }
+
+                _orders.value = enrichOrdersWithSupplierInfo(sortedOrders)
+                applyFilters()
+
+            } catch (t: Throwable) {
+                Log.e("OrdersViewModel", "Error loading orders: ${t.message}", t)
+            }
+        }
+    }
+
     fun loadOrdersByAdminRestaurantId(adminRestaurantId: Int) {
         viewModelScope.launch {
             try {
@@ -137,42 +195,55 @@ class OrdersViewModel @Inject constructor(
     }
 
     /**
-     * ✅ Enriquece las órdenes con información del supplier obtenida de los batches disponibles
+     * Enriquece las órdenes con información del supplier obtenida de los batches disponibles
      */
     private suspend fun enrichOrdersWithSupplierInfo(orders: List<Order>): List<Order> {
-        // Cargar todos los batches una sola vez
-        val allBatches = try {
-            inventoryRepository.getBatches()
-        } catch (e: Exception) {
-            Log.e("OrdersViewModel", "Error loading batches: ${e.message}")
-            emptyList()
+        // Obtener IDs únicos de suppliers
+        val supplierIds = orders.map { it.supplierId }.distinct()
+
+        Log.d("OrdersViewModel", "Enriching orders with ${supplierIds.size} unique suppliers")
+
+        // CARGAR TODOS LOS PROFILES EN PARALELO
+        supplierIds.forEach { supplierId ->
+            if (!_suppliersProfileCache.value.containsKey(supplierId)) {
+                loadSupplierProfile(supplierId)
+            }
         }
 
-        // Crear un mapa de userId a batch para búsqueda rápida
-        val batchesByUserId = allBatches.groupBy { it.userId }
+        // ESPERAR UN POCO para que se carguen los profiles
+        kotlinx.coroutines.delay(500)
 
         return orders.map { order ->
-            // Si la orden ya tiene supplier con profile completo, no hacer nada
-            if (order.supplier.profile != null &&
-                order.supplier.profile.businessName.isNotBlank()) {
-                return@map order
-            }
+            // Buscar profile en caché
+            val cachedProfile = _suppliersProfileCache.value[order.supplierId]
 
-            // Buscar un batch del supplier en nuestros batches cargados
-            val supplierBatches = batchesByUserId[order.supplierId]
-            val sampleBatch = supplierBatches?.firstOrNull()
+            if (cachedProfile != null) {
+                Log.d("OrdersViewModel", "Found profile for supplier ${order.supplierId}: ${cachedProfile.businessName}")
 
-            if (sampleBatch != null) {
-                // Crear un User mejorado con la info disponible
+                // Crear un User con el profile cargado
                 order.copy(
                     supplier = order.supplier.copy(
+                        profile = cachedProfile,
                         username = order.supplier.username.takeIf { it.isNotBlank() }
-                            ?: "Supplier ${order.supplierId}"
+                            ?: "supplier_${order.supplierId}"
                     )
                 )
             } else {
-                // Si no encontramos batches, dejar como está
-                order
+                Log.w("OrdersViewModel", "No profile found for supplier ${order.supplierId}")
+
+                // Si el order ya tiene profile del backend, mantenerlo
+                if (order.supplier.profile != null &&
+                    order.supplier.profile.businessName.isNotBlank()) {
+                    order
+                } else {
+                    // Crear un supplier temporal
+                    order.copy(
+                        supplier = order.supplier.copy(
+                            username = order.supplier.username.takeIf { it.isNotBlank() }
+                                ?: "supplier_${order.supplierId}"
+                        )
+                    )
+                }
             }
         }
     }
@@ -182,7 +253,7 @@ class OrdersViewModel @Inject constructor(
     }
 
     fun refreshOrders() {
-        loadAllOrders()
+        loadOrdersForCurrentUser()
     }
 
     // ===== FUNCIONES PARA EL FLUJO DE CREACIÓN DE ÓRDENES =====
@@ -248,6 +319,7 @@ class OrdersViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
+                // 1. Validaciones
                 if (_orderBatchItems.value.isEmpty()) {
                     onError("No items in order")
                     return@launch
@@ -259,66 +331,107 @@ class OrdersViewModel @Inject constructor(
                     return@launch
                 }
 
-                val supplierId = _orderBatchItems.value.firstOrNull()?.batch?.userId
-
-                if (supplierId == null) {
-                    onError("Supplier not found")
-                    return@launch
+                // 2. AGRUPAR ITEMS POR SUPPLIER
+                val itemsBySupplier = _orderBatchItems.value.groupBy { item ->
+                    item.batch?.userId ?: 0
                 }
 
-                val order = Order(
-                    id = 0,
-                    adminRestaurantId = currentUserId,
-                    supplierId = supplierId,
-                    supplier = User(
-                        id = supplierId,
-                        username = "temp",
-                        roleId = 2,
-                        profile = Profile(
-                            id = 0,
-                            firstName = "",
-                            lastName = "",
-                            email = "",
-                            phone = "",
-                            address = "",
-                            country = "",
-                            avatar = null,
-                            businessName = "",
-                            businessAddress = "",
-                            description = null,
-                            categories = emptyList()
-                        ),
-                        subscription = 0
-                    ),
-                    requestedDate = java.time.LocalDate.now().toString(),
-                    partiallyAccepted = false,
-                    requestedProductsCount = _orderBatchItems.value.size,
-                    totalPrice = calculateTotal(),
-                    state = OrderState.ON_HOLD,
-                    situation = OrderSituation.PENDING,
-                    batchItems = _orderBatchItems.value
-                )
+                val supplierIds = itemsBySupplier.keys.filter { it != 0 }
+                Log.d("OrdersViewModel", "Loading profiles for ${supplierIds.size} suppliers before creating orders")
 
-                val createdOrder = repository.createOrder(order)
+                supplierIds.forEach { supplierId ->
+                    if (!_suppliersProfileCache.value.containsKey(supplierId)) {
+                        loadSupplierProfile(supplierId)
+                    }
+                }
 
-                if (createdOrder != null) {
-                    // Recargar la orden completa desde el servidor para obtener datos actualizados
-                    val completeOrder = repository.getOrderById(createdOrder.id)
+                delay(500)
 
-                    if (completeOrder != null) {
-                        _orders.value = listOf(completeOrder) + _orders.value
-                    } else {
-                        _orders.value = listOf(createdOrder) + _orders.value
+                // 3. CREAR UNA ORDEN POR CADA SUPPLIER
+                val createdOrders = mutableListOf<Order>()
+
+                itemsBySupplier.forEach { (supplierId, items) ->
+                    if (supplierId == 0) {
+                        Log.w("OrdersViewModel", "Skipping items with invalid supplierId")
+                        return@forEach
                     }
 
+                    // Calcular el total para ESTE supplier específico
+                    val supplierTotal = items.fold(BigDecimal.ZERO) { acc, item ->
+                        val price = BigDecimal(item.batch?.customSupply?.price ?: 0.0)
+                        val quantity = BigDecimal(item.quantity)
+                        acc + (price * quantity)
+                    }.setScale(2, RoundingMode.HALF_UP).toDouble()
+
+                    val supplierProfile = _suppliersProfileCache.value[supplierId]
+
+                    // Crear orden para este supplier
+                    val order = Order(
+                        id = 0,
+                        adminRestaurantId = currentUserId,
+                        supplierId = supplierId,
+                        supplier = User(
+                            id = supplierId,
+                            username = "temp",
+                            roleId = 2,
+                            profile = supplierProfile,
+                            subscription = 0
+                        ),
+                        requestedDate = java.time.LocalDate.now().toString(),
+                        partiallyAccepted = false,
+                        requestedProductsCount = items.size,  // Solo los items de este supplier
+                        totalPrice = supplierTotal,  // Total calculado para este supplier
+                        state = OrderState.ON_HOLD,
+                        situation = OrderSituation.PENDING,
+                        batchItems = items  // Solo los items de este supplier
+                    )
+
+                    // Crear la orden en el backend
+                    val createdOrder = repository.createOrder(order)
+
+                    if (createdOrder != null) {
+                        createdOrders.add(createdOrder)
+                    } else {
+                        Log.e("OrdersViewModel", "Failed to create order for supplier $supplierId")
+                    }
+                }
+
+                // 4. ACTUALIZAR LA LISTA CON TODAS LAS ÓRDENES CREADAS
+                if (createdOrders.isNotEmpty()) {
+                    // Recargar todas las órdenes desde el servidor para tener datos completos
+                    val completeOrders = createdOrders.mapNotNull { order ->
+                        val fetchedOrder = repository.getOrderById(order.id)
+
+                        // SI LA ORDEN NO TIENE PROFILE, AGREGARLO DEL CACHÉ
+                        if (fetchedOrder != null &&
+                            (fetchedOrder.supplier.profile == null ||
+                                    fetchedOrder.supplier.profile.businessName.isBlank())) {
+
+                            val profile = _suppliersProfileCache.value[fetchedOrder.supplierId]
+                            if (profile != null) {
+                                fetchedOrder.copy(
+                                    supplier = fetchedOrder.supplier.copy(profile = profile)
+                                )
+                            } else {
+                                fetchedOrder
+                            }
+                        } else {
+                            fetchedOrder
+                        }
+                    }
+                    _orders.value = completeOrders + _orders.value
                     applyFilters()
                     clearOrderState()
                     onSuccess()
+
+                    Log.d("OrdersViewModel", "Successfully created ${createdOrders.size} orders")
                 } else {
-                    onError("Failed to create order")
+                    onError("Failed to create any orders")
                 }
+
             } catch (e: Exception) {
-                onError(e.message ?: "Error creating order")
+                Log.e("OrdersViewModel", "Error creating orders: ${e.message}", e)
+                onError(e.message ?: "Error creating orders")
             }
         }
     }
@@ -395,6 +508,10 @@ class OrdersViewModel @Inject constructor(
 
                 Log.d("OrdersViewModel", "Filtered ${filtered.size} batches for supplyId $supplyId from ${allBatches.size} total batches")
                 _availableBatches.value = filtered
+
+                // Cargar profiles de suppliers automáticamente
+                loadSuppliersProfiles(filtered)
+
             } catch (e: Exception) {
                 Log.e("OrdersViewModel", "Error loading batches: ${e.message}")
                 _availableBatches.value = emptyList()
@@ -407,19 +524,100 @@ class OrdersViewModel @Inject constructor(
     /**
      * Agrupa los batches disponibles por supplier
      */
+
+    private suspend fun loadSupplierProfile(userId: Int): Profile? {
+        // Si ya está en caché, retornar
+        _suppliersProfileCache.value[userId]?.let {
+            Log.d("OrdersViewModel", "Profile for supplier $userId already in cache")
+            return it
+        }
+
+        return try {
+            Log.d("OrdersViewModel", "Loading profile for supplier $userId...")
+
+            var loadedProfile: Profile? = null
+
+            profileRepository.getProfileById(userId.toString())
+                .onSuccess { profile ->
+                    // Agregar al caché
+                    _suppliersProfileCache.value = _suppliersProfileCache.value + (userId to profile)
+                    loadedProfile = profile
+                    Log.d("OrdersViewModel", "✓ Loaded profile for supplier $userId: ${profile.businessName}")
+                }
+                .onFailure { error ->
+                    Log.e("OrdersViewModel", "✗ Error loading profile for supplier $userId: ${error.message}")
+                }
+
+            loadedProfile
+        } catch (e: Exception) {
+            Log.e("OrdersViewModel", "✗ Exception loading supplier profile $userId: ${e.message}", e)
+            null
+        }
+    }
+
+    fun loadSuppliersProfiles(batches: List<Batch>) {
+        viewModelScope.launch {
+            _isLoadingSuppliers.value = true
+            try {
+                // Obtener IDs únicos de suppliers
+                val supplierIds = batches.mapNotNull { it.userId }.distinct()
+
+                // Filtrar los que NO están en caché
+                val idsToLoad = supplierIds.filter { id ->
+                    !_suppliersProfileCache.value.containsKey(id)
+                }
+
+                Log.d("OrdersViewModel", "Loading ${idsToLoad.size} supplier profiles (${supplierIds.size - idsToLoad.size} already cached)")
+
+                // Cargar en paralelo
+                idsToLoad.map { userId ->
+                    async { loadSupplierProfile(userId) }
+                }.awaitAll()
+
+            } catch (e: Exception) {
+                Log.e("OrdersViewModel", "Error loading suppliers profiles: ${e.message}")
+            } finally {
+                _isLoadingSuppliers.value = false
+            }
+        }
+    }
+
+    fun getSupplierProfile(userId: Int): Profile? {
+        return _suppliersProfileCache.value[userId]
+    }
+
+    fun getSupplierBusinessName(userId: Int): String {
+        val profile = _suppliersProfileCache.value[userId]
+        return profile?.businessName?.takeIf { it.isNotBlank() }
+            ?: "Supplier #$userId"
+    }
+
     fun getBatchesGroupedBySupplier(): Map<Int, List<Batch>> {
         return _availableBatches.value.groupBy { it.userId ?: 0 }
     }
- 
-    fun getSupplierBusinessName(batch: Batch): String {
-        // Aquí deberías tener una forma de obtener el User completo
-        // Por ahora, retornamos un placeholder basado en el userId
-        // TODO: Implementar carga de User/Profile completo
-        return batch.customSupply?.supply?.name?.let { supplyName ->
-            "Supplier #${batch.userId}"
-        } ?: "Unknown Supplier"
+
+    fun getSupplierPhone(userId: Int): String {
+        return _suppliersProfileCache.value[userId]?.phone?.takeIf { it.isNotBlank() }
+            ?: "N/A"
     }
 
+    fun getSupplierEmail(userId: Int): String {
+        return _suppliersProfileCache.value[userId]?.email?.takeIf { it.isNotBlank() }
+            ?: "N/A"
+    }
+
+    //NO VA
+    /* fun getSupplierBusinessName(batch: Batch): String {
+        return getSupplierBusinessName(batch.userId ?: 0)
+    } */
+
+    fun loadSupplierForOrder(supplierId: Int) {
+        viewModelScope.launch {
+            if (!_suppliersProfileCache.value.containsKey(supplierId)) {
+                loadSupplierProfile(supplierId)
+            }
+        }
+    }
     fun getCurrentUsername(): String? {
         return tokenManager.getUsername()
     }
