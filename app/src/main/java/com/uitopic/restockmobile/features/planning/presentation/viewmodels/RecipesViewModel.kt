@@ -226,14 +226,14 @@ class RecipesViewModel @Inject constructor(
         val state = _formState.value
         return when (state.currentStep) {
             1 -> {
+                // Removemos la validación de supplies obligatorios
                 val isValid = state.name.isNotBlank() &&
                         state.description.isNotBlank() &&
-                        state.price.toDoubleOrNull() != null &&
-                        state.supplies.isNotEmpty()
+                        state.price.toDoubleOrNull() != null
 
                 if (!isValid) {
                     _formState.value = state.copy(
-                        error = "Please fill all required fields and add at least one supply"
+                        error = "Please fill all required fields"
                     )
                 }
                 isValid
@@ -261,24 +261,30 @@ class RecipesViewModel @Inject constructor(
 
                 remoteDataSource.createRecipe(request)
                     .onSuccess { recipe ->
-                        // Add supplies to the recipe
-                        val supplies = state.supplies.map {
-                            AddSupplyToRecipeDto(
-                                supplyId = it.supplyId.toString(),
-                                quantity = it.quantity
-                            )
-                        }
-                        remoteDataSource.addSuppliesToRecipe(recipe.id ?: 0, supplies)
-                            .onSuccess {
-                                _formState.value = state.copy(isLoading = false, isSuccess = true)
-                                loadRecipes()
-                            }
-                            .onFailure { error ->
-                                _formState.value = state.copy(
-                                    isLoading = false,
-                                    error = error.message
+                        // Add supplies to the recipe only if there are any
+                        if (state.supplies.isNotEmpty()) {
+                            val supplies = state.supplies.map {
+                                AddSupplyToRecipeDto(
+                                    supplyId = it.supplyId.toString(),
+                                    quantity = it.quantity
                                 )
                             }
+                            remoteDataSource.addSuppliesToRecipe(recipe.id ?: 0, supplies)
+                                .onSuccess {
+                                    _formState.value = state.copy(isLoading = false, isSuccess = true)
+                                    loadRecipes()
+                                }
+                                .onFailure { error ->
+                                    _formState.value = state.copy(
+                                        isLoading = false,
+                                        error = error.message
+                                    )
+                                }
+                        } else {
+                            // No supplies to add, recipe created successfully
+                            _formState.value = state.copy(isLoading = false, isSuccess = true)
+                            loadRecipes()
+                        }
                     }
                     .onFailure { error ->
                         _formState.value = state.copy(

@@ -33,6 +33,7 @@ fun SupplyFormScreen(
     var selectedSupply by remember { mutableStateOf<Supply?>(null) }
     var minStock by remember { mutableStateOf("") }
     var maxStock by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("") }
     var description by remember { mutableStateOf(existingSupply?.description ?: "") }
 
     val categoryOptions = supplies
@@ -53,6 +54,7 @@ fun SupplyFormScreen(
             selectedSupply = supplies.find { it.id == existingSupply.supply!!.id }
             minStock = existingSupply.minStock.toString()
             maxStock = existingSupply.maxStock.toString()
+            price = existingSupply.price.toString()
             description = existingSupply.description ?: ""
             selectedCategory = existingSupply.supply?.category ?: ""
         }
@@ -140,6 +142,15 @@ fun SupplyFormScreen(
                 shape = MaterialTheme.shapes.medium
             )
 
+            OutlinedTextField(
+                value = price,
+                onValueChange = { price = it },
+                label = { Text("Price") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium
+            )
+
             Text("Unit", fontWeight = FontWeight.Medium, fontSize = 16.sp)
             DropdownMenuField(
                 options = unitOptions.map { it.first },
@@ -151,13 +162,13 @@ fun SupplyFormScreen(
 
             Button(
                 onClick = {
-                    if (selectedSupply != null && minStock.isNotBlank() && maxStock.isNotBlank()) {
+                    if (selectedSupply != null && minStock.isNotBlank() && maxStock.isNotBlank() && price.isNotBlank()) {
                         val newCustom = CustomSupply(
                             id = existingSupply?.id ?: 0,
                             userId = existingSupply?.userId ?: viewModel.getCurrentUserId(),
                             minStock = minStock.toInt(),
                             maxStock = maxStock.toInt(),
-                            price = 0.0, // Always send 0
+                            price = price.toDoubleOrNull() ?: 0.0,
                             supplyId = selectedSupply?.id ?: 0,
                             unit = UnitModel(selectedUnit.first, selectedUnit.second),
                             currencyCode = "PEN",
