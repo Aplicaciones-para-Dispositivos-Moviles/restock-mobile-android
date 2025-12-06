@@ -14,5 +14,8 @@ data class Order(
     val totalPrice: Double = 0.0,
     val state: OrderState = OrderState.ON_HOLD,
     val situation: OrderSituation = OrderSituation.PENDING,
-    val batchItems: List<OrderBatchItem> = emptyList()
+    val batchItems: List<OrderBatchItem> = emptyList(),
+    val description: String? = null,
+    val estimatedShipDate: String? = null,
+    val estimatedShipTime: String? = null
 )
