@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -81,7 +82,7 @@ fun BatchListSection(
                             }
 
                             IconButton(onClick = { onBatchClick(batch.id) }) {
-                                Icon(Icons.Default.Search, contentDescription = "Details", tint = greenColor)
+                                Icon(Icons.Default.Visibility, contentDescription = "View details", tint = greenColor)
                             }
                         }
 

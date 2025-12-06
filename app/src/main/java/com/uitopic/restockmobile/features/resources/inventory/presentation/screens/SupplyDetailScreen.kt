@@ -5,8 +5,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -21,6 +26,8 @@ fun SupplyDetailScreen(
     onEditClick: (CustomSupply) -> Unit,
     onDeleteClick: (CustomSupply) -> Unit
 ) {
+    var expanded by remember { mutableStateOf(false) } // Estado del menú desplegable
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -30,6 +37,30 @@ fun SupplyDetailScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { expanded = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit") },
+                            onClick = {
+                                expanded = false
+                                customSupply?.let { onEditClick(it) }
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete") },
+                            onClick = {
+                                expanded = false
+                                customSupply?.let { onDeleteClick(it) }
+                            }
                         )
                     }
                 }
@@ -56,7 +87,6 @@ fun SupplyDetailScreen(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-
             // Supply Title
             Text(
                 text = customSupply.supply?.name ?: "Unnamed Supply",
@@ -84,32 +114,7 @@ fun SupplyDetailScreen(
                 }
             }
 
-            // Action Buttons
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Button(
-                    onClick = { onEditClick(customSupply) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit")
-                    Spacer(Modifier.width(8.dp))
-                    Text("Edit")
-                }
-
-                OutlinedButton(
-                    onClick = { onDeleteClick(customSupply) },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete")
-                    Spacer(Modifier.width(8.dp))
-                    Text("Delete")
-                }
-            }
+            // Eliminamos los botones inferiores
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -23,6 +24,7 @@ import com.uitopic.restockmobile.features.resources.inventory.presentation.viewm
 @Composable
 fun InventoryScreen(
     viewModel: InventoryViewModel = hiltViewModel(),
+    onBack: () -> Unit,  // <- Función para regresar
     onAddSupplyClick: () -> Unit,
     onViewSupplyDetails: (CustomSupply) -> Unit,
     onBatchClick: (String) -> Unit,
@@ -74,6 +76,15 @@ fun InventoryScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Inventory Management", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = greenColor
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = whiteColor,
                     titleContentColor = Color.Black

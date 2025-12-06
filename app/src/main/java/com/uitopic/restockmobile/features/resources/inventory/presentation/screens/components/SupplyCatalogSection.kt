@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -121,7 +122,7 @@ private fun SupplyCard(custom: CustomSupply, onViewSupplyDetails: (CustomSupply)
                     onClick = { onViewSupplyDetails(custom) },
                     colors = IconButtonDefaults.filledIconButtonColors(containerColor = greenColor)
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = "Details", tint = Color.White)
+                    Icon(Icons.Default.Visibility, contentDescription = "View details", tint = Color.White)
                 }
             }
         }

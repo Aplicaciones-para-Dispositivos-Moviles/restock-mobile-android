@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,15 +27,13 @@ fun InventoryDetailScreen(
     onEdit: (String) -> Unit = {}
 ) {
     val batches by viewModel.batches.collectAsState()
-
     val batch = batches.find { it.id == batchId }
-
-    LaunchedEffect(batches) {
-        println("🔍 Batch data -> $batches")
-    }
 
     val greenColor = Color(0xFF4F8A5B)
     val whiteColor = Color.White
+
+    var menuExpanded by remember { mutableStateOf(false) } // Menú de 3 puntos
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = whiteColor,
@@ -44,6 +43,30 @@ fun InventoryDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = greenColor)
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                    }
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit") },
+                            onClick = {
+                                menuExpanded = false
+                                batch?.let { onEdit(it.id) }
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete") },
+                            onClick = {
+                                menuExpanded = false
+                                showDeleteDialog = true
+                            }
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -65,19 +88,38 @@ fun InventoryDetailScreen(
         } else {
             BatchDetailContent(
                 batch = batch,
-                onEdit = { onEdit(batch.id) },
-                onDelete = {
-                    viewModel.deleteBatch(batch.id)
-                    onBack()
-                },
                 modifier = Modifier.padding(padding)
             )
         }
     }
+
+    if (showDeleteDialog && batch != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete batch") },
+            text = { Text("Are you sure you want to delete this batch? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteBatch(batch.id)
+                        onBack()
+                    }
+                ) {
+                    Text("Delete", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
-fun BatchDetailContent(batch: Batch, onEdit: () -> Unit, onDelete: () -> Unit, modifier: Modifier = Modifier) {
+fun BatchDetailContent(batch: Batch, modifier: Modifier = Modifier) {
     val customSupply = batch.customSupply
     val supply = customSupply?.supply
     val unit = customSupply?.unit
@@ -96,7 +138,11 @@ fun BatchDetailContent(batch: Batch, onEdit: () -> Unit, onDelete: () -> Unit, m
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Supply Information", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Supply Information",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
                 Divider()
 
                 DetailRow("Name:", supply?.name ?: "-")
@@ -113,7 +159,11 @@ fun BatchDetailContent(batch: Batch, onEdit: () -> Unit, onDelete: () -> Unit, m
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Custom Supply Details", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Custom Supply Details",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
                 Divider()
 
                 DetailRow("Min stock:", customSupply?.minStock?.toString() ?: "-")
@@ -130,67 +180,22 @@ fun BatchDetailContent(batch: Batch, onEdit: () -> Unit, onDelete: () -> Unit, m
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Batch Data", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Batch Data",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
                 Divider()
 
                 DetailRow("Current stock:", batch.stock.toString())
-                DetailRow("Expiration date:", batch.expirationDate ?: "-")
-                DetailRow("User ID:", (batch.userId ?: 1).toString())
+
+                // Solo mostrar Expiration date si es perecible
+                if (supply?.perishable == true) {
+                    DetailRow("Expiration date:", batch.expirationDate ?: "-")
+                }
+
                 DetailRow("Batch ID:", batch.id)
             }
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        // === Actions ===
-        var showDeleteDialog by remember { mutableStateOf(false) }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            OutlinedButton(
-                onClick = { showDeleteDialog = true },
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color.Red
-                )
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
-                Spacer(Modifier.width(6.dp))
-                Text("Delete")
-            }
-            Spacer(Modifier.width(10.dp))
-            Button(
-                onClick = onEdit,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F8A5B))
-            ) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.White)
-                Spacer(Modifier.width(6.dp))
-                Text("Edit", color = Color.White)
-            }
-        }
-
-        if (showDeleteDialog) {
-            AlertDialog(
-                onDismissRequest = { showDeleteDialog = false },
-                title = { Text("Delete batch") },
-                text = { Text("Are you sure you want to delete this batch? This action cannot be undone.") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showDeleteDialog = false
-                            onDelete()
-                        }
-                    ) {
-                        Text("Delete", color = Color.Red)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
         }
     }
 }
