@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderBatchItem
+import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderSituation
 import com.uitopic.restockmobile.features.resources.orders.domain.models.OrderState
 import com.uitopic.restockmobile.features.resources.orders.presentation.viewmodels.OrdersViewModel
 import com.uitopic.restockmobile.ui.theme.RestockmobileTheme
@@ -248,6 +249,71 @@ fun OrderDetailScreen(
                     }
                 }
 
+                //NUEVA SECCIÓN: Info de envío, solo si la orden FUE APROBADA
+                item {
+                    if (order.situation == OrderSituation.APPROVED) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Shipping info",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                order.description?.takeIf { it.isNotBlank() }?.let { desc ->
+                                    Text(
+                                        text = desc,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    order.estimatedShipDate?.let { date ->
+                                        Column {
+                                            Text(
+                                                text = "Estimated date",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = date,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+
+                                    order.estimatedShipTime?.let { time ->
+                                        Column {
+                                            Text(
+                                                text = "Estimated time",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = time,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
                 // Items de la orden
                 item {
                     Text(
@@ -308,6 +374,12 @@ fun OrderItemDetailCard(item: OrderBatchItem) {
     val quantity = item.quantity
     val subtotal = price * quantity
 
+    val statusText = if (item.accepted) "Accepted" else "Pending"
+    val statusColor = if (item.accepted)
+        MaterialTheme.colorScheme.primary
+    else
+        MaterialTheme.colorScheme.outline
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -320,6 +392,37 @@ fun OrderItemDetailCard(item: OrderBatchItem) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = supplyName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Supplier ${item.batch?.userId ?: "Unknown"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // Chip de estado
+                Surface(
+                    color = statusColor,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
             Text(
                 text = supplyName,
                 style = MaterialTheme.typography.titleMedium,

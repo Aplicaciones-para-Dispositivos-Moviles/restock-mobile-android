@@ -17,7 +17,10 @@ data class OrderDto(
     val totalPrice: Double?,
     val state: String?,
     val situation: String?,
-    val batchItems: List<OrderBatchItemDto>?
+    val batchItems: List<OrderBatchItemDto>?,
+    val description: String?,
+    val estimatedShipDate: String?,
+    val estimatedShipTime: String?
 )
 
 data class OrderBatchItemDto(
@@ -37,7 +40,10 @@ data class OrderRequestDto(
     val totalPrice: Double,
     val state: String,
     val situation: String,
-    val batches: List<OrderBatchItemRequestDto>
+    val batches: List<OrderBatchItemRequestDto>,
+    val description: String? = null,
+    val estimatedShipDate: String? = null,
+    val estimatedShipTime: String? = null
 )
 
 data class OrderBatchItemRequestDto(

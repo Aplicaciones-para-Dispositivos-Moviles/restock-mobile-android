@@ -46,7 +46,10 @@ fun OrderDto.toDomain(): Order {
         totalPrice = totalPrice ?: 0.0,
         state = state?.let { OrderState.valueOf(it) } ?: OrderState.ON_HOLD,
         situation = situation?.let { OrderSituation.valueOf(it) } ?: OrderSituation.PENDING,
-        batchItems = batchItems?.map { it.toDomain() } ?: emptyList()
+        batchItems = batchItems?.map { it.toDomain() } ?: emptyList(),
+        description = description,
+        estimatedShipDate = estimatedShipDate,
+        estimatedShipTime = estimatedShipTime
     )
 }
 
@@ -69,7 +72,10 @@ fun Order.toRequestDto(): OrderRequestDto {
         totalPrice = totalPrice,
         state = state.name,
         situation = situation.name,
-        batches = batchItems.map { it.toRequestDto() }
+        batches = batchItems.map { it.toRequestDto() },
+        description = description,
+        estimatedShipDate = estimatedShipDate,
+        estimatedShipTime = estimatedShipTime
     ) 
     
     return dto
