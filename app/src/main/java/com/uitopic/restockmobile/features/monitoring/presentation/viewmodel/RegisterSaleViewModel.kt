@@ -2,13 +2,18 @@ package com.uitopic.restockmobile.features.monitoring.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.uitopic.restockmobile.core.auth.local.TokenManager
 import com.uitopic.restockmobile.core.utils.Resource
+import com.uitopic.restockmobile.features.monitoring.domain.model.DishOption
 import com.uitopic.restockmobile.features.monitoring.domain.model.DishSelection
 import com.uitopic.restockmobile.features.monitoring.domain.model.RegisteredSale
+import com.uitopic.restockmobile.features.monitoring.domain.model.SupplyOption
 import com.uitopic.restockmobile.features.monitoring.domain.model.SupplySelection
 import com.uitopic.restockmobile.features.monitoring.domain.usecases.CancelSaleUseCase
 import com.uitopic.restockmobile.features.monitoring.domain.usecases.CreateSaleUseCase
 import com.uitopic.restockmobile.features.monitoring.domain.usecases.GetAllSalesUseCase
+import com.uitopic.restockmobile.features.planning.data.remote.datasources.RecipeRemoteDataSource
+import com.uitopic.restockmobile.features.resources.inventory.domain.repositories.InventoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +24,9 @@ import javax.inject.Inject
 data class SaleUiState(
     val isLoading: Boolean = false,
     val registeredSales: List<RegisteredSale> = emptyList(),
+    val dishOptions: List<DishOption> = emptyList(),
+    val supplyOptions: List<SupplyOption> = emptyList(),
+    val isLoadingOptions: Boolean = false,
     val error: String? = null,
     val successMessage: String? = null
 )
@@ -27,7 +35,10 @@ data class SaleUiState(
 class RegisterSaleViewModel @Inject constructor(
     private val createSaleUseCase: CreateSaleUseCase,
     private val getAllSalesUseCase: GetAllSalesUseCase,
-    private val cancelSaleUseCase: CancelSaleUseCase
+    private val cancelSaleUseCase: CancelSaleUseCase,
+    private val recipeRemoteDataSource: RecipeRemoteDataSource,
+    private val inventoryRepository: InventoryRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SaleUiState())
@@ -35,6 +46,53 @@ class RegisterSaleViewModel @Inject constructor(
 
     init {
         loadSales()
+        loadDishesAndSupplies()
+    }
+
+    private fun loadDishesAndSupplies() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingOptions = true)
+
+            // Cargar recetas (dishes) desde el backend
+            recipeRemoteDataSource.getAllRecipes()
+                .onSuccess { recipes ->
+                    val dishOptions = recipes.map { recipe ->
+                        DishOption(
+                            label = recipe.name ?: "Unknown Dish",
+                            id = recipe.id ?: 0,
+                            price = recipe.price ?: 0.0
+                        )
+                    }
+                    _uiState.value = _uiState.value.copy(dishOptions = dishOptions)
+                }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        error = "Failed to load dishes: ${error.message}"
+                    )
+                }
+
+            // Cargar custom supplies del usuario desde el backend
+            try {
+                val customSupplies = inventoryRepository.getCustomSuppliesByUserId()
+                val supplyOptions = customSupplies.map { customSupply ->
+                    SupplyOption(
+                        id = customSupply.id,
+                        name = customSupply.supply?.name ?: "Unknown Supply",
+                        description = customSupply.description,
+                        unitPrice = customSupply.price
+                    )
+                }
+                _uiState.value = _uiState.value.copy(
+                    supplyOptions = supplyOptions,
+                    isLoadingOptions = false
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoadingOptions = false,
+                    error = "Failed to load supplies: ${e.message}"
+                )
+            }
+        }
     }
 
     fun loadSales() {
@@ -64,11 +122,12 @@ class RegisterSaleViewModel @Inject constructor(
 
     fun createSale(
         dishSelections: List<DishSelection>,
-        supplySelections: List<SupplySelection>,
-        userId: Int = 1 // Por defecto userId 1, puedes obtenerlo del usuario logueado
+        supplySelections: List<SupplySelection>
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+
+            val userId = tokenManager.getUserId()
 
             when (val result = createSaleUseCase(dishSelections, supplySelections, userId)) {
                 is Resource.Success -> {

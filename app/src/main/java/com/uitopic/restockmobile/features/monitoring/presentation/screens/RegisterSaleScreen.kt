@@ -92,10 +92,10 @@ fun RegisterSaleScreen(
     onBack: () -> Unit,
     viewModel: RegisterSaleViewModel = hiltViewModel()
 ) {
-    // Cargar datos desde las fuentes de datos
-    val dishOptions = remember { DishDataSource.getDishOptions() }
-    val supplyOptions = remember { SupplyDataSource.getSupplyOptions() }
+    // Obtener datos desde el ViewModel en lugar de DataSources hardcodeados
     val uiState by viewModel.uiState.collectAsState()
+    val dishOptions = uiState.dishOptions
+    val supplyOptions = uiState.supplyOptions
     val snackbarHostState = remember { SnackbarHostState() }
     var isRegistering by remember { mutableStateOf(false) }
     var dishSelections by remember { mutableStateOf<Map<Int, DishSelection>>(emptyMap()) }
@@ -235,8 +235,7 @@ fun RegisterSaleScreen(
                     // Llamar al ViewModel para crear la venta en el backend
                     viewModel.createSale(
                         dishSelections = dishSelections.values.toList(),
-                        supplySelections = selections.values.toList(),
-                        userId = 1 // TODO: Obtener del usuario logueado
+                        supplySelections = selections.values.toList()
                     )
 
                     showSuccessDialog = false

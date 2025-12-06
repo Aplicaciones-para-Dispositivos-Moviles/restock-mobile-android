@@ -115,6 +115,7 @@ fun NavGraphBuilder.ordersNavGraph(
 
         SelectSupplierForSupplyScreen(
             ordersViewModel = ordersViewModel,
+            inventoryViewModel = inventoryViewModel,
             supplyId = supplyId,
             onNavigateBack = {
                 navController.popBackStack()

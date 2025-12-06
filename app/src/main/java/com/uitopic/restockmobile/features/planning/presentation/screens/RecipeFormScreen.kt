@@ -218,7 +218,7 @@ fun RecipeInfoStep(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Supplies*",
+                    text = "Supplies (Optional)",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -279,8 +279,8 @@ fun RecipeInfoStep(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = formState.name.isNotBlank() &&
                          formState.description.isNotBlank() &&
-                         formState.price.isNotBlank() &&
-                         formState.supplies.isNotEmpty()
+                         formState.price.isNotBlank()
+                // Removida la validación: && formState.supplies.isNotEmpty()
             ) {
                 Text("Continue")
                 Spacer(Modifier.width(8.dp))

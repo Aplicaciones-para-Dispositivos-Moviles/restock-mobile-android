@@ -40,6 +40,10 @@ fun CreateOrderScreen(
     val orderBatchItems by viewModel.orderBatchItems.collectAsState()
     val totalAmount by viewModel.totalAmount.collectAsState()
 
+    //Obtener el cache de suppliers
+    val suppliersProfileCache by viewModel.suppliersProfileCache.collectAsState()
+    val isLoadingSuppliers by viewModel.isLoadingSuppliers.collectAsState()
+
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -97,43 +101,79 @@ fun CreateOrderScreen(
                 }
             }
 
-            if (orderBatchItems.isEmpty()) {
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+            when {
+                isLoadingSuppliers -> {
+                    // ESTADO DE CARGA CENTRADO
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)        // ← IMPORTANTE
+                            .fillMaxSize(),    // ← IMPORTANTE
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Default.ShoppingCart,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "No items added yet",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator()
+                            Text(
+                                text = "Loading suppliers...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(orderBatchItems) { item ->
-                        OrderBatchItemCard(
-                            item = item,
-                            onQuantityChange = { newQuantity ->
-                                viewModel.updateItemQuantity(item.batchId, newQuantity)
-                            },
-                            onRemove = {
-                                viewModel.removeItem(item.batchId)
+
+                orderBatchItems.isEmpty() -> {
+                    // ESTADO VACÃO
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)        // ← IMPORTANTE
+                            .fillMaxSize(),    // ← IMPORTANTE
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.ShoppingCart,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "No items added yet",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                else -> {
+                    // LISTA DE ITEMS
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(orderBatchItems) { item ->
+                            val supplierId = item.batch?.userId
+                            val businessName = supplierId?.let {
+                                suppliersProfileCache[it]?.businessName
                             }
-                        )
+
+                            OrderBatchItemCard(
+                                item = item,
+                                onQuantityChange = { newQuantity ->
+                                    viewModel.updateItemQuantity(item.batchId, newQuantity)
+                                },
+                                onRemove = {
+                                    viewModel.removeItem(item.batchId)
+                                },
+                                supplierBusinessName = businessName
+                            )
+                        }
                     }
                 }
             }

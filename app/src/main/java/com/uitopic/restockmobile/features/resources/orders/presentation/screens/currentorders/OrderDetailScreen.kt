@@ -33,9 +33,17 @@ fun OrderDetailScreen(
     viewModel: OrdersViewModel = hiltViewModel()
 ) {
     val allOrders by viewModel.orders.collectAsState()
+    val suppliersProfileCache by viewModel.suppliersProfileCache.collectAsState()
 
     val order = remember(allOrders, orderId) {
         allOrders.getOrNull(orderId)
+    }
+
+    //CARGAR PROFILE DEL SUPPLIER
+    LaunchedEffect(order?.supplierId) {
+        order?.supplierId?.let { supplierId ->
+            viewModel.loadSupplierForOrder(supplierId)
+        }
     }
 
     Scaffold(
@@ -77,6 +85,11 @@ fun OrderDetailScreen(
                 }
             }
         } else {
+
+            // OBTENER PROFILE DEL CACHÉ O DEL ORDER
+            val supplierProfile = suppliersProfileCache[order.supplierId]
+                ?: order.supplier.profile
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -163,15 +176,19 @@ fun OrderDetailScreen(
                                 )
                                 Column {
                                     Text(
-                                        text = order.supplier?.profile?.businessName ?: "Unknown",
+                                        text = supplierProfile?.businessName?.takeIf { it.isNotBlank() }
+                                            ?: "Supplier #${order.supplierId}",
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Medium
                                     )
-                                    Text(
-                                        text = "@${order.supplier?.username ?: "unknown"}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    supplierProfile?.let { profile ->
+                                        Text(
+                                            text = "${profile.firstName} ${profile.lastName}".trim()
+                                                .takeIf { it.isNotBlank() } ?: "unknown",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
 
@@ -185,7 +202,7 @@ fun OrderDetailScreen(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = order.supplier?.profile?.phone ?: "N/A",
+                                    text = supplierProfile?.phone?.takeIf { it.isNotBlank() } ?: "N/A",
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
@@ -200,7 +217,7 @@ fun OrderDetailScreen(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    text = order.supplier?.profile?.email ?: "N/A",
+                                    text = supplierProfile?.email?.takeIf { it.isNotBlank() } ?: "N/A",
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
