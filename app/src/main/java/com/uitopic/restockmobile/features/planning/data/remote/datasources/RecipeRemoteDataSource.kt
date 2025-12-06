@@ -14,6 +14,19 @@ import javax.inject.Singleton
 class RecipeRemoteDataSource @Inject constructor(
     private val apiService: RecipeApiService
 ) {
+
+    suspend fun getAllRecipesByUserId(userId: Int): Result<List<RecipeDto>> = try {
+        val response = apiService.getAllRecipes()
+        if (response.isSuccessful && response.body() != null) {
+            val allRecipes = response.body()!!
+            val userRecipes = allRecipes.filter { it.userId == userId }
+            Result.success(userRecipes)
+        } else {
+            Result.failure(Exception("Error: ${response.code()} - ${response.message()}"))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
     suspend fun getAllRecipes(): Result<List<RecipeDto>> = try {
         val response = apiService.getAllRecipes()
         if (response.isSuccessful && response.body() != null) {
