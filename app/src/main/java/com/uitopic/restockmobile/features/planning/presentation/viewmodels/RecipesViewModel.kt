@@ -84,7 +84,8 @@ class RecipesViewModel @Inject constructor(
     fun loadRecipes() {
         viewModelScope.launch {
             _uiState.value = RecipeUiState.Loading
-            remoteDataSource.getAllRecipes()
+            val userId = tokenManager.getUserId()
+            remoteDataSource.getAllRecipesByUserId(userId)
                 .onSuccess { recipes ->
                     allRecipes = recipes
                     applyFilters()
